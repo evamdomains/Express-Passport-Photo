@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" fill="none">
+  <!-- Mark: navy rounded rect with three white forward-motion bars -->
+  <rect width="44" height="48" rx="5" fill="#1A3A5C"/>
+  <!-- Bar 1 (top) -->
+  <polygon points="7,10 26,10 30,17 7,17" fill="white"/>
+  <!-- Bar 2 (middle — extends furthest right, forms arrow point) -->
+  <polygon points="7,20 30,20 36,27 7,27" fill="white"/>
+  <!-- Bar 3 (bottom) -->
+  <polygon points="7,30 26,30 30,37 7,37" fill="white"/>
+  <!-- Wordmark -->
+  <text
+    x="52" y="21"
+    font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif"
+    font-weight="800"
+    font-size="14"
+    fill="#1A3A5C"
+    letter-spacing="-0.2"
+  >Express</text>
+  <text
+    x="52" y="39"
+    font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif"
+    font-weight="500"
+    font-size="12"
+    fill="#1A3A5C"
+    letter-spacing="0.3"
+  >PASSPORT PHOTO</text>
+</svg>
