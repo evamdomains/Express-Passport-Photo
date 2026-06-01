@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import PhotoReview from '@/components/PhotoReview';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = { title: 'Review Your Photo' };
 
 export default function EditorPage() {

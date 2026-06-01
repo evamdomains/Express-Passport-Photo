@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import OrderConfirmation from '@/components/OrderConfirmation';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = { title: 'Order Confirmed' };
 
 export default function OrderConfirmationPage() {

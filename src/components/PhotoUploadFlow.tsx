@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DocumentTypeSelector from './DocumentTypeSelector';
 import type { DocumentTypeId } from '@/types/document';
@@ -93,7 +93,7 @@ function ProcessingOverlay() {
   );
 }
 
-export default function PhotoUploadFlow() {
+function PhotoUploadFlowInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselected = searchParams.get('type') as DocumentTypeId | null;
@@ -266,5 +266,13 @@ export default function PhotoUploadFlow() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PhotoUploadFlow() {
+  return (
+    <Suspense fallback={<div className="h-64 animate-pulse bg-gray-100 rounded-2xl" />}>
+      <PhotoUploadFlowInner />
+    </Suspense>
   );
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import PhotoUploadFlow from '@/components/PhotoUploadFlow';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Upload Your Photo — Get a Compliant Passport Photo in 60 Seconds',
   description: 'Upload your selfie and get a print-ready, government-accepted passport photo in under 60 seconds.',

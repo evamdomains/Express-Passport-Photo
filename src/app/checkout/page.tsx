@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import CheckoutForm from '@/components/CheckoutForm';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Secure Checkout',
   description: 'Choose your delivery method and complete your passport photo order.',
