@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { Inter } from 'next/font/google';
 import TrustBar from '@/components/TrustBar';
 import StickyMobileCTA from '@/components/StickyMobileCTA';
+import MainNav from '@/components/MainNav';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -14,6 +16,11 @@ export const metadata: Metadata = {
   description:
     'ICAO-compliant passport photos in 60 seconds. AI removes background, checks compliance. Digital download $6.99. CVS/Walgreens pickup $12.99. Money-back guarantee.',
   metadataBase: new URL('https://expresspassportphoto.com'),
+  icons: {
+    icon: '/images/backgrounds/favicon.png',
+    shortcut: '/images/backgrounds/favicon.png',
+    apple: '/images/backgrounds/favicon.png',
+  },
   openGraph: {
     siteName: 'Express Passport Photo',
     type: 'website',
@@ -24,30 +31,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} scroll-smooth`}>
       <body>
         <header className="border-b border-gray-100 bg-white/90 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
-            <a href="/" className="shrink-0 font-bold text-lg text-brand-900 tracking-tight">
-              Express Passport Photo
+            <a href="/" className="shrink-0">
+              <Image
+                src="/images/backgrounds/logo.jpeg"
+                alt="Express Passport Photo"
+                width={1536}
+                height={1536}
+                priority
+                className="h-12 w-auto sm:h-14"
+              />
             </a>
-            <nav className="flex items-center gap-3 sm:gap-6 text-sm text-gray-600">
-              <a href="/us-passport-photo" className="hidden lg:block hover:text-gray-900 transition-colors">
-                US Passport
-              </a>
-              <a href="/canada-passport-photo" className="hidden lg:block hover:text-gray-900 transition-colors">
-                Canada Passport
-              </a>
-              <a href="/store-locator" className="hidden sm:block hover:text-gray-900 transition-colors">
-                Find a Store
-              </a>
-              <a
-                href="/upload"
-                className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors font-semibold text-sm"
-              >
-                Get Started
-              </a>
-            </nav>
+            <MainNav />
           </div>
         </header>
 
@@ -76,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <ul className="space-y-2 text-sm text-gray-500">
                   <li><a href="/us-passport-photo" className="hover:text-brand-600 transition-colors">US Passport Photo</a></li>
                   <li><a href="/canada-passport-photo" className="hover:text-brand-600 transition-colors">Canadian Passport Photo</a></li>
+                  <li><a href="/baby-passport-photo" className="hover:text-brand-600 transition-colors">Baby Passport Photo</a></li>
                   <li><a href="/upload?type=us_visa" className="hover:text-brand-600 transition-colors">US Visa Photo</a></li>
                   <li><a href="/upload?type=canadian_pr_card" className="hover:text-brand-600 transition-colors">Canadian PR Card Photo</a></li>
                 </ul>

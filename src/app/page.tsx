@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
+import Flag from '@/components/Flag';
+import BeforeAfterShowcase from '@/components/BeforeAfterShowcase';
 
 export const metadata: Metadata = {
   title: 'Passport Photo Online — $6.99 | ICAO Compliant | 60 Seconds',
@@ -7,100 +10,25 @@ export const metadata: Metadata = {
     'Get a government-accepted passport photo in 60 seconds. AI removes background, checks compliance. Instant digital download $6.99. CVS/Walgreens pickup $12.99.',
 };
 
-// ─── Inline SVG face illustration ──────────────────────────────────────────
-function FaceIllustration({
-  skinTone = '#D4956A',
-  hairColor = '#2D1B00',
-  centered = true,
-  rotation = 0,
-  bgColor = 'white',
-}: {
-  skinTone?: string;
-  hairColor?: string;
-  centered?: boolean;
-  rotation?: number;
-  bgColor?: string;
-}) {
-  const cx = centered ? 50 : 44;
-  return (
-    <svg viewBox="0 0 100 100" style={{ background: bgColor, transform: `rotate(${rotation}deg)` }}>
-      {/* Hair */}
-      <ellipse cx={cx} cy="22" rx="23" ry="18" fill={hairColor} />
-      {/* Head/face */}
-      <ellipse cx={cx} cy="38" rx="21" ry="26" fill={skinTone} />
-      {/* Eyes */}
-      <ellipse cx={cx - 8} cy="35" rx="3" ry="3.5" fill="#2d1b00" />
-      <ellipse cx={cx + 8} cy="35" rx="3" ry="3.5" fill="#2d1b00" />
-      {/* Mouth */}
-      <path d={`M${cx - 6} 48 Q${cx} 51 ${cx + 6} 48`} stroke="#b5644a" strokeWidth="1.5" fill="none" />
-      {/* Shoulders */}
-      <ellipse cx={cx} cy="102" rx="36" ry="22" fill={hairColor} opacity="0.7" />
-    </svg>
-  );
-}
+// Compliance example passport photos — one person per card, sliced from the
+// 3-up reference image (male · female · male). `position` picks the panel:
+// '0%' = left, '50%' = center (female), '100%' = right.
+const COMPLIANT_EXAMPLES_IMAGE = '/images/backgrounds/background_4.png';
 
-// Before/After hero illustration
-function BeforeAfterDemo() {
-  return (
-    <div className="flex items-center justify-center gap-4 sm:gap-6 select-none">
-      {/* Before */}
-      <div className="text-center">
-        <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-xl overflow-hidden shadow-md border border-red-100">
-          {/* Messy room-like background */}
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #e8d5b7 0%, #c9a96e 50%, #b8860b 100%)' }} />
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-amber-800/40" />
-          <div className="absolute top-3 right-3 w-5 h-10 bg-amber-700/50 rounded-sm" />
-          <div className="absolute inset-0 flex items-center justify-center -translate-x-2">
-            <div className="w-16 h-20 sm:w-20 sm:h-24" style={{ transform: 'rotate(6deg)' }}>
-              <FaceIllustration skinTone="#c8956c" hairColor="#1a1a1a" centered={false} bgColor="transparent" />
-            </div>
-          </div>
-          {/* Red X badge */}
-          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow">✗</div>
-        </div>
-        <p className="text-xs text-red-500 font-semibold mt-2">Before</p>
-        <p className="text-xs text-gray-400">Raw selfie</p>
-      </div>
-
-      {/* Arrow */}
-      <div className="flex flex-col items-center gap-1">
-        <div className="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-lg text-lg font-bold">
-          ⚡
-        </div>
-        <p className="text-xs text-brand-600 font-semibold">AI</p>
-      </div>
-
-      {/* After */}
-      <div className="text-center">
-        <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-xl overflow-hidden shadow-md border border-green-100 bg-white">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-20 h-24 sm:w-24 sm:h-28">
-              <FaceIllustration skinTone="#c8956c" hairColor="#1a1a1a" bgColor="white" />
-            </div>
-          </div>
-          {/* Green checkmark badge */}
-          <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow">✓</div>
-        </div>
-        <p className="text-xs text-green-600 font-semibold mt-2">After</p>
-        <p className="text-xs text-gray-400">Compliant photo</p>
-      </div>
-    </div>
-  );
-}
-
-// Compliance example passport photos
-function PassportPhotoExample({
-  skinTone,
-  hairColor,
-}: {
-  skinTone: string;
-  hairColor: string;
-}) {
+function PassportPhotoExample({ position }: { position: string }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-lg overflow-hidden border-2 border-gray-100 shadow-sm bg-white">
-        <FaceIllustration skinTone={skinTone} hairColor={hairColor} bgColor="white" />
-      </div>
+      <div
+        role="img"
+        aria-label="Example of a compliant passport photo"
+        className="w-28 h-28 sm:w-32 sm:h-32 rounded-lg overflow-hidden border-2 border-gray-100 shadow-sm bg-white"
+        style={{
+          backgroundImage: `url('${COMPLIANT_EXAMPLES_IMAGE}')`,
+          backgroundSize: '300% auto', // 3 panels across; height keeps aspect (cover-style)
+          backgroundPosition: `${position} 50%`,
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
       <ul className="mt-3 space-y-1 text-xs text-green-600">
         {['White background', 'Correct size', 'Face centered', 'ICAO compliant'].map((c) => (
           <li key={c} className="flex items-center gap-1">
@@ -175,6 +103,16 @@ const FAQ_ITEMS = [
     a: "Yes. We check face size, head position, eye state, and background. If a government agency rejects your photo for a covered compliance reason, we issue a full refund.",
   },
 ];
+
+// ─── "How it works" banner image ───────────────────────────────────────────
+// To swap this banner later: drop a new file in public/images/backgrounds/
+// and change ONLY this path. No other code changes are required.
+const SECTION_BACKGROUND_IMAGE = '/images/backgrounds/background_1.png';
+// Intrinsic dimensions of the image above — used by next/image to reserve
+// space and preserve aspect ratio (prevents layout shift). Update these only
+// if a replacement image has a different native size.
+const SECTION_BACKGROUND_WIDTH = 1672;
+const SECTION_BACKGROUND_HEIGHT = 941;
 
 export default function HomePage() {
   const schemas = [
@@ -257,56 +195,22 @@ export default function HomePage() {
 
           {/* Right: before/after */}
           <div className="flex justify-center">
-            <BeforeAfterDemo />
+            <BeforeAfterShowcase />
           </div>
         </div>
       </section>
 
-      {/* ── How it works ─────────────────────────────────────────────────── */}
-      <section className="max-w-5xl mx-auto px-4 py-16 sm:py-20">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-12">Three steps, under 5 minutes</h2>
-        <div className="grid sm:grid-cols-3 gap-6 sm:gap-8 relative">
-          {/* Connector line (desktop) */}
-          <div className="hidden sm:block absolute top-10 left-1/4 right-1/4 h-0.5 bg-brand-100 z-0" />
-
-          {[
-            {
-              icon: '📱',
-              step: '1',
-              title: 'Upload your selfie',
-              desc: 'Take a selfie or upload an existing photo. Any background works.',
-              time: '10 seconds',
-            },
-            {
-              icon: '🤖',
-              step: '2',
-              title: 'AI checks compliance',
-              desc: 'We remove the background, verify face size, position, and lighting.',
-              time: '~30 seconds',
-            },
-            {
-              icon: '⚡',
-              step: '3',
-              title: 'Download or pick up',
-              desc: 'Get an instant download, or pick up 2 prints at CVS / Walgreens.',
-              time: 'Instant',
-            },
-          ].map(({ icon, step, title, desc, time }) => (
-            <div key={step} className="relative z-10 text-center">
-              <div className="w-20 h-20 rounded-2xl bg-brand-50 border-2 border-brand-100 flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">
-                {icon}
-              </div>
-              <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center shadow">
-                {step}
-              </div>
-              <h3 className="font-semibold text-lg mb-1">{title}</h3>
-              <p className="text-gray-500 text-sm mb-2">{desc}</p>
-              <span className="inline-block bg-green-50 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                ⏱ {time}
-              </span>
-            </div>
-          ))}
-        </div>
+      {/* ── How it works (full-width banner) ─────────────────────────────── */}
+      <section className="w-full">
+        <Image
+          src={SECTION_BACKGROUND_IMAGE}
+          width={SECTION_BACKGROUND_WIDTH}
+          height={SECTION_BACKGROUND_HEIGHT}
+          alt="Three steps to a compliant passport photo in under 5 minutes: upload your selfie, our AI checks compliance, then download or pick up your prints."
+          sizes="100vw"
+          className="w-full h-auto"
+          priority={false}
+        />
       </section>
 
       {/* ── Document types ───────────────────────────────────────────────── */}
@@ -314,19 +218,22 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3">Works for these documents</h2>
           <p className="text-center text-gray-500 text-sm mb-10">Select your document type to get started</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
-              { id: 'us_passport', flag: '🇺🇸', name: 'US Passport', size: '2×2 in', href: '/us-passport-photo' },
-              { id: 'us_visa', flag: '🇺🇸', name: 'US Visa', size: '2×2 in', href: '/upload?type=us_visa' },
-              { id: 'canadian_passport', flag: '🇨🇦', name: 'Canadian Passport', size: '50×70mm', href: '/canada-passport-photo' },
-              { id: 'canadian_pr_card', flag: '🇨🇦', name: 'Canadian PR Card', size: '50×70mm', href: '/upload?type=canadian_pr_card' },
-            ].map(({ flag, name, size, href }) => (
+              { id: 'us_passport', country: 'US' as const, name: 'US Passport', size: '2×2 in', href: '/us-passport-photo' },
+              { id: 'us_visa', country: 'US' as const, name: 'US Visa', size: '2×2 in', href: '/upload?type=us_visa' },
+              { id: 'baby_passport', country: 'US' as const, name: 'Baby Passport', size: '2×2 in', href: '/baby-passport-photo' },
+              { id: 'canadian_passport', country: 'Canada' as const, name: 'Canadian Passport', size: '50×70mm', href: '/canada-passport-photo' },
+              { id: 'canadian_pr_card', country: 'Canada' as const, name: 'Canadian PR Card', size: '50×70mm', href: '/upload?type=canadian_pr_card' },
+            ].map(({ country, name, size, href }) => (
               <Link
                 key={name}
                 href={href}
                 className="group bg-white rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md border border-gray-100 hover:border-brand-200 transition-all text-center"
               >
-                <div className="text-4xl mb-3">{flag}</div>
+                <div className="flex justify-center mb-3">
+                  <Flag country={country} className="h-9 w-14" />
+                </div>
                 <p className="font-semibold text-sm sm:text-base group-hover:text-brand-600 transition-colors leading-snug">{name}</p>
                 <p className="text-xs text-gray-400 mt-1">{size} · White bg</p>
                 <div className="mt-3 text-xs text-brand-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
@@ -343,9 +250,9 @@ export default function HomePage() {
         <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3">What a compliant photo looks like</h2>
         <p className="text-center text-gray-500 text-sm mb-10">Every photo we produce meets these standards automatically</p>
         <div className="flex justify-center gap-8 sm:gap-16 flex-wrap">
-          <PassportPhotoExample skinTone="#D4A574" hairColor="#1a0a00" />
-          <PassportPhotoExample skinTone="#FDDBB4" hairColor="#2c1810" />
-          <PassportPhotoExample skinTone="#8D5524" hairColor="#0d0d0d" />
+          <PassportPhotoExample position="0%" />
+          <PassportPhotoExample position="50%" />
+          <PassportPhotoExample position="100%" />
         </div>
       </section>
 

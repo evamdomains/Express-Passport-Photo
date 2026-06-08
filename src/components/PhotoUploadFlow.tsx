@@ -93,13 +93,17 @@ function ProcessingOverlay() {
   );
 }
 
-function PhotoUploadFlowInner() {
+function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselected = searchParams.get('type') as DocumentTypeId | null;
 
+  // When a page scopes the selector to a single document type, preselect it so
+  // the Continue button is immediately usable.
+  const initialDocType = preselected ?? (allowedTypes?.length === 1 ? allowedTypes[0] : null);
+
   const [step, setStep] = useState<Step>(preselected ? 'upload' : 'select-type');
-  const [docType, setDocType] = useState<DocumentTypeId | null>(preselected);
+  const [docType, setDocType] = useState<DocumentTypeId | null>(initialDocType);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -186,7 +190,7 @@ function PhotoUploadFlowInner() {
       {step === 'select-type' && (
         <div>
           <h2 className="text-base font-semibold mb-4 text-gray-700">What document do you need a photo for?</h2>
-          <DocumentTypeSelector selected={docType} onChange={setDocType} />
+          <DocumentTypeSelector selected={docType} onChange={setDocType} allowed={allowedTypes} />
           <button
             disabled={!docType}
             onClick={() => setStep('upload')}
@@ -269,10 +273,10 @@ function PhotoUploadFlowInner() {
   );
 }
 
-export default function PhotoUploadFlow() {
+export default function PhotoUploadFlow({ allowedTypes }: { allowedTypes?: DocumentTypeId[] } = {}) {
   return (
     <Suspense fallback={<div className="h-64 animate-pulse bg-gray-100 rounded-2xl" />}>
-      <PhotoUploadFlowInner />
+      <PhotoUploadFlowInner allowedTypes={allowedTypes} />
     </Suspense>
   );
 }

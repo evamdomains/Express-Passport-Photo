@@ -1,6 +1,7 @@
 export type DocumentTypeId =
   | 'us_passport'
   | 'us_visa'
+  | 'baby_passport'
   | 'canadian_passport'
   | 'canadian_pr_card';
 

@@ -58,6 +58,33 @@ export const DOCUMENT_SPECS: Record<DocumentTypeId, DocumentSpec> = {
     tilesOn4x6: [2, 3],
   },
 
+  baby_passport: {
+    id: 'baby_passport',
+    name: 'Baby Passport',
+    country: 'US',
+    widthPx: 600,
+    heightPx: 600,
+    widthMm: 50.8,
+    heightMm: 50.8,
+    dpi: 300,
+    backgroundHex: '#FFFFFF',
+    // US passport spec applies to infants too: 2×2 in, head 50–69% of frame.
+    headHeightMin: 0.50,
+    headHeightMax: 0.69,
+    faceHeightMinMm: null,
+    faceHeightMaxMm: null,
+    requirements: [
+      'White or off-white background',
+      "Baby's eyes open if possible (infants are exempt if they can't keep them open)",
+      'Neutral expression — no pacifier, toys, or hands in frame',
+      'No other person visible (support the baby out of view)',
+      'Head centered, facing forward',
+      'No hats or head coverings (unless for religious reasons)',
+      'Taken within the last 6 months',
+    ],
+    tilesOn4x6: [2, 3],
+  },
+
   canadian_passport: {
     id: 'canadian_passport',
     name: 'Canadian Passport',

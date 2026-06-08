@@ -3,7 +3,17 @@
     "allow": [
       "Bash(npm install *)",
       "Bash(node *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('public/images/backgrounds/background_1.png'\\);console.log\\('w='+s.readUInt32BE\\(16\\),'h='+s.readUInt32BE\\(20\\)\\)\")",
+      "Bash(ls next.config.*)",
+      "Bash(ls tailwind.config.*)",
+      "Bash(find src *)",
+      "Bash(ls -la public/images/backgrounds/background_2.png)",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('public/images/backgrounds/background_2.png'\\);console.log\\('dimensions: '+s.readUInt32BE\\(16\\)+'x'+s.readUInt32BE\\(20\\)\\)\")",
+      "Bash(curl -s \"http://localhost:3000/api/orders?orderId=1cbecaa3-5a48-42e0-a3d7-63f23880b34c\")",
+      "Bash(grep -E \"Compiled|Failed|error|warn|✓|Route|/$\")",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('public/images/backgrounds/favicon.png'\\);console.log\\('favicon.png: '+s.readUInt32BE\\(16\\)+'x'+s.readUInt32BE\\(20\\)\\)\")",
+      "Bash(node -e \"const b=require\\('fs'\\).readFileSync\\('public/images/backgrounds/logo.jpeg'\\);let i=2;while\\(i<b.length\\){if\\(b[i]!==0xFF\\)break;const m=b[i+1];if\\(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC\\){console.log\\('logo.jpeg: '+b.readUInt16BE\\(i+7\\)+'x'+b.readUInt16BE\\(i+5\\)\\);break;}i+=2+b.readUInt16BE\\(i+2\\);}\")"
     ]
   }
 }

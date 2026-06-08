@@ -69,6 +69,7 @@ export default function PhotoReview() {
                 alt="Processed passport photo"
                 width={300}
                 height={300}
+                unoptimized
                 className="rounded-lg object-contain"
               />
             </div>
@@ -85,6 +86,7 @@ export default function PhotoReview() {
                 alt="4×6 print layout"
                 width={400}
                 height={600}
+                unoptimized
                 className="rounded-lg object-contain w-full"
               />
             </div>

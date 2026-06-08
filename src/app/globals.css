@@ -10,3 +10,37 @@
     @apply antialiased text-gray-900 bg-white;
   }
 }
+
+@layer utilities {
+  /* 3D scene depth for the floating hero images */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+}
+
+/* Respect users who prefer less motion: freeze the floating animations
+   and disable smooth in-page scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+  .animate-float-3d,
+  .animate-float-3d-alt,
+  .animate-shine,
+  .animate-glow-pulse,
+  .animate-pin-drop,
+  .animate-radar,
+  .animate-map-drift,
+  .animate-sheet-float,
+  .animate-route-draw,
+  .animate-demo-scan,
+  .animate-demo-tick,
+  .animate-demo-bracket,
+  .animate-demo-arrow,
+  .animate-hero-crossfade {
+    animation: none !important;
+  }
+}

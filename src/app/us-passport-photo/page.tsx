@@ -1,6 +1,17 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import PhotoUploadFlow from '@/components/PhotoUploadFlow';
+
+// ─── Hero side images (configurable) ───────────────────────────────────────
+// To swap either image later: drop a new file in public/images/backgrounds/
+// and change ONLY the path below. No other code changes required.
+const US_HERO_LEFT_IMAGE = '/images/backgrounds/us_passport.png';
+const US_HERO_RIGHT_IMAGE = '/images/backgrounds/us_visa.png';
+// Native size of the side images (all 768×512) — used by next/image to keep
+// aspect ratio and avoid layout shift. Update if a replacement differs.
+const US_HERO_IMAGE_WIDTH = 768;
+const US_HERO_IMAGE_HEIGHT = 512;
 
 export const metadata: Metadata = {
   title: 'US Passport Photo Online — $6.99 | 2×2 Inches, ICAO Compliant',
@@ -58,7 +69,36 @@ export default function USPassportPhotoPage() {
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white py-16 px-4 mt-2">
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-[88rem] mx-auto flex items-center justify-center gap-6 lg:gap-8 xl:gap-12">
+          {/* Left image — hidden below lg so tablet/mobile layout is unchanged */}
+          <div className="hidden lg:block flex-1 max-w-lg perspective-1000">
+            <div className="group relative preserve-3d">
+              {/* Pulsing halo */}
+              <div
+                aria-hidden="true"
+                className="absolute -inset-5 rounded-[2rem] bg-gradient-to-tr from-sky-400/40 via-brand-400/30 to-cyan-300/40 blur-2xl animate-glow-pulse"
+              />
+              {/* Floating 3D card */}
+              <div className="relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/20 animate-float-3d transition-all duration-500 ease-out will-change-transform group-hover:scale-105 group-hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]">
+                <Image
+                  src={US_HERO_LEFT_IMAGE}
+                  width={US_HERO_IMAGE_WIDTH}
+                  height={US_HERO_IMAGE_HEIGHT}
+                  alt="Example of a compliant US passport photo"
+                  sizes="(min-width: 1024px) 38vw, 1px"
+                  className="block w-full h-auto"
+                />
+                {/* Light sweep */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/45 to-transparent animate-shine"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Center content (unchanged) */}
+          <div className="shrink-0 w-full max-w-lg text-center">
           <div className="text-5xl mb-4">🇺🇸</div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">
             US Passport Photo Online
@@ -77,13 +117,41 @@ export default function USPassportPhotoPage() {
             <span>✓ Money-back guarantee</span>
             <span>✓ Instant download</span>
           </div>
+          </div>
+
+          {/* Right image — hidden below lg so tablet/mobile layout is unchanged */}
+          <div className="hidden lg:block flex-1 max-w-lg perspective-1000">
+            <div className="group relative preserve-3d">
+              {/* Pulsing halo */}
+              <div
+                aria-hidden="true"
+                className="absolute -inset-5 rounded-[2rem] bg-gradient-to-tr from-cyan-300/40 via-brand-400/30 to-sky-400/40 blur-2xl animate-glow-pulse"
+              />
+              {/* Floating 3D card */}
+              <div className="relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/20 animate-float-3d-alt transition-all duration-500 ease-out will-change-transform group-hover:scale-105 group-hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]">
+                <Image
+                  src={US_HERO_RIGHT_IMAGE}
+                  width={US_HERO_IMAGE_WIDTH}
+                  height={US_HERO_IMAGE_HEIGHT}
+                  alt="Example of a compliant US visa photo"
+                  sizes="(min-width: 1024px) 38vw, 1px"
+                  className="block w-full h-auto"
+                />
+                {/* Light sweep */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/45 to-transparent animate-shine"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Upload widget */}
       <section className="max-w-2xl mx-auto px-4 py-14">
         <h2 className="text-2xl font-bold text-center mb-8">Upload your photo</h2>
-        <PhotoUploadFlow />
+        <PhotoUploadFlow allowedTypes={['us_passport', 'us_visa']} />
       </section>
 
       {/* Official specs */}
