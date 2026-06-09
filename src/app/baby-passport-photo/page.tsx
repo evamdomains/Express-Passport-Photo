@@ -1,11 +1,23 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import PhotoUploadFlow from '@/components/PhotoUploadFlow';
 
+// ─── Hero side images (configurable) ───────────────────────────────────────
+// Left = infant passport examples; right = US passport example. Both float as
+// animated 3D cards (glow halo + float motion + shine sweep), mirroring the
+// US Passport / US Visa hero treatment. To swap either, change only the path.
+const BABY_HERO_LEFT_IMAGE = '/images/backgrounds/baby_left_card.png';
+const BABY_HERO_LEFT_WIDTH = 800;
+const BABY_HERO_LEFT_HEIGHT = 660;
+const BABY_HERO_RIGHT_IMAGE = '/images/backgrounds/baby_right_card.png';
+const BABY_HERO_RIGHT_WIDTH = 794;
+const BABY_HERO_RIGHT_HEIGHT = 658;
+
 export const metadata: Metadata = {
-  title: 'Baby Passport Photo Online — $6.99 | 2×2 Inches, ICAO Compliant',
+  title: 'Baby Passport Photo Online — $4.99 | 2×2 Inches, ICAO Compliant',
   description:
-    'Get a compliant baby or infant passport photo in 60 seconds. 2×2 inches, white background, State Department compliant. AI removes the background — no studio needed. Instant download $6.99.',
+    'Get a compliant baby or infant passport photo in 60 seconds. 2×2 inches, white background, State Department compliant. AI removes the background — no studio needed. Instant download $4.99.',
   keywords: [
     'baby passport photo',
     'infant passport photo',
@@ -18,7 +30,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: 'https://expresspassportphoto.com/baby-passport-photo' },
   openGraph: {
-    title: 'Baby Passport Photo — $6.99 | Express Passport Photo',
+    title: 'Baby Passport Photo — $4.99 | Express Passport Photo',
     description: 'ICAO-compliant baby & infant passport photos. 2×2 inches, white background. Take it at home, no studio needed.',
     images: [{ url: '/og-baby-passport.png', width: 1200, height: 630 }],
   },
@@ -65,24 +77,83 @@ export default function BabyPassportPhotoPage() {
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 text-white py-16 px-4 mt-2">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="text-5xl mb-4">👶</div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">
-            Baby Passport Photo Online
-          </h1>
-          <p className="text-brand-200 text-base mb-2">2×2 inches · White background · State Department compliant</p>
-          <p className="text-brand-300 text-sm mb-8">For infants &amp; children · 600×600px at 300 DPI · Take it at home</p>
-          <Link
-            href="/upload?type=baby_passport"
-            className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
-          >
-            Get My Baby&apos;s Passport Photo — $6.99
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
-          </Link>
-          <div className="flex items-center justify-center gap-4 mt-4 text-xs text-brand-300 flex-wrap">
-            <span>✓ No account required</span>
-            <span>✓ Money-back guarantee</span>
-            <span>✓ Instant download</span>
+        <div className="max-w-[88rem] mx-auto flex items-center justify-center gap-6 lg:gap-8 xl:gap-12">
+          {/* Left image — infant passport photo (hidden below lg) */}
+          <div className="hidden lg:block flex-1 max-w-lg perspective-1000">
+            <div className="group relative preserve-3d">
+              {/* Pulsing halo */}
+              <div
+                aria-hidden="true"
+                className="absolute -inset-5 rounded-[2rem] bg-gradient-to-tr from-sky-400/40 via-brand-400/30 to-cyan-300/40 blur-2xl animate-glow-pulse"
+              />
+              {/* Floating 3D card */}
+              <div className="relative overflow-hidden rounded-[1.75rem] shadow-2xl animate-float-3d transition-all duration-500 ease-out will-change-transform group-hover:scale-105 group-hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]">
+                <Image
+                  src={BABY_HERO_LEFT_IMAGE}
+                  width={BABY_HERO_LEFT_WIDTH}
+                  height={BABY_HERO_LEFT_HEIGHT}
+                  alt="Examples of compliant infant and baby passport photos"
+                  priority
+                  unoptimized
+                  sizes="(min-width: 1024px) 38vw, 1px"
+                  className="block w-full h-auto"
+                />
+                {/* Light sweep */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/45 to-transparent animate-shine"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Center content */}
+          <div className="shrink-0 w-full max-w-lg text-center">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">
+              Baby Passport Photo Online
+            </h1>
+            <p className="text-brand-200 text-base mb-2">2×2 inches · White background · State Department compliant</p>
+            <p className="text-brand-300 text-sm mb-8">For infants &amp; children · 600×600px at 300 DPI · Take it at home</p>
+            <Link
+              href="/upload?type=baby_passport"
+              className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
+            >
+              Get My Baby&apos;s Passport Photo — $4.99
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+            </Link>
+            <div className="flex items-center justify-center gap-4 mt-4 text-xs text-brand-300 flex-wrap">
+              <span>✓ No account required</span>
+              <span>✓ Money-back guarantee</span>
+              <span>✓ Instant download</span>
+            </div>
+          </div>
+
+          {/* Right image — US passport example (hidden below lg) */}
+          <div className="hidden lg:block flex-1 max-w-lg perspective-1000">
+            <div className="group relative preserve-3d">
+              {/* Pulsing halo */}
+              <div
+                aria-hidden="true"
+                className="absolute -inset-5 rounded-[2rem] bg-gradient-to-tr from-cyan-300/40 via-brand-400/30 to-sky-400/40 blur-2xl animate-glow-pulse"
+              />
+              {/* Floating 3D card */}
+              <div className="relative overflow-hidden rounded-[1.75rem] shadow-2xl animate-float-3d-alt transition-all duration-500 ease-out will-change-transform group-hover:scale-105 group-hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)]">
+                <Image
+                  src={BABY_HERO_RIGHT_IMAGE}
+                  width={BABY_HERO_RIGHT_WIDTH}
+                  height={BABY_HERO_RIGHT_HEIGHT}
+                  alt="Example of a compliant US passport photo"
+                  unoptimized
+                  sizes="(min-width: 1024px) 38vw, 1px"
+                  className="block w-full h-auto"
+                />
+                {/* Light sweep */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/45 to-transparent animate-shine"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>

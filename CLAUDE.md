@@ -30,7 +30,7 @@ PDF generation (`createPrintPdf`) uses `pdf-lib` (no native deps) to wrap the ti
 All dimensions, compliance thresholds, and tile counts live here. US docs are 600×600px (2×2 in); Canadian docs are 591×827px (50×70mm). `tilesOn4x6` controls how many photos are placed on the 4×6 print layout.
 
 ### Payments
-- Two Stripe products: `STRIPE_PRICE_DIGITAL` ($9) and `STRIPE_PRICE_PRINTED` ($19)
+- Two Stripe products: `STRIPE_PRICE_DIGITAL` ($4.99) and `STRIPE_PRICE_PRINTED` ($8.99)
 - Checkout session includes `orderId` in `metadata`
 - Webhook (`/api/webhooks/stripe`) handles `checkout.session.completed`: generates PDF + emails download link for digital; sends confirmation email for printed
 - Webhook secret must be set (`STRIPE_WEBHOOK_SECRET`); test locally with `stripe listen --forward-to localhost:3000/api/webhooks/stripe`

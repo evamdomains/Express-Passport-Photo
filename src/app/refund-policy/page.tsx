@@ -22,7 +22,7 @@ export default function RefundPolicyPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">Digital Download ($6.99)</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-3">Digital Download ($4.99)</h2>
           <p>
             We issue a <strong>100% refund</strong> if your photo is rejected by a
             government agency for any compliance reason that our system was designed to check —
@@ -36,7 +36,7 @@ export default function RefundPolicyPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">Printed & Ready ($12.99)</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-3">Printed & Ready ($8.99)</h2>
           <p>
             Once we have uploaded your order to the print store, <strong>no refund</strong> is
             available for the printing service. If the prints have not yet been uploaded,

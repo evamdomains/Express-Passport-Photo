@@ -13,7 +13,13 @@
       "Bash(curl -s \"http://localhost:3000/api/orders?orderId=1cbecaa3-5a48-42e0-a3d7-63f23880b34c\")",
       "Bash(grep -E \"Compiled|Failed|error|warn|✓|Route|/$\")",
       "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('public/images/backgrounds/favicon.png'\\);console.log\\('favicon.png: '+s.readUInt32BE\\(16\\)+'x'+s.readUInt32BE\\(20\\)\\)\")",
-      "Bash(node -e \"const b=require\\('fs'\\).readFileSync\\('public/images/backgrounds/logo.jpeg'\\);let i=2;while\\(i<b.length\\){if\\(b[i]!==0xFF\\)break;const m=b[i+1];if\\(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC\\){console.log\\('logo.jpeg: '+b.readUInt16BE\\(i+7\\)+'x'+b.readUInt16BE\\(i+5\\)\\);break;}i+=2+b.readUInt16BE\\(i+2\\);}\")"
+      "Bash(node -e \"const b=require\\('fs'\\).readFileSync\\('public/images/backgrounds/logo.jpeg'\\);let i=2;while\\(i<b.length\\){if\\(b[i]!==0xFF\\)break;const m=b[i+1];if\\(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC\\){console.log\\('logo.jpeg: '+b.readUInt16BE\\(i+7\\)+'x'+b.readUInt16BE\\(i+5\\)\\);break;}i+=2+b.readUInt16BE\\(i+2\\);}\")",
+      "Bash(git -C \"d:/Express-passport-photo-main/Express-Passport-Photo\" status --short)",
+      "Bash(npx eslint *)",
+      "PowerShell($chrome = @\\(\"$env:ProgramFiles\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\",\"${env:ProgramFiles\\(x86\\)}\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\",\"$env:ProgramFiles \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\",\"${env:ProgramFiles\\(x86\\)}\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\",\"$env:ProgramFiles\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"\\) | Where-Object { Test-Path $_ } | Select-Object -First 1; if \\($chrome\\) { \"FOUND: $chrome\" } else { \"NONE\" })",
+      "PowerShell($shot = \"d:\\\\Express-passport-photo-main\\\\Express-Passport-Photo\\\\.preview.png\"; if \\(Test-Path $shot\\) { Remove-Item $shot -Force }; & \"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1400,3200 --screenshot=\"$shot\" \"http://localhost:3000/\" 2>$null | Out-Null; Start-Sleep -Seconds 2; if \\(Test-Path $shot\\) { \"OK $\\(\\(Get-Item $shot\\).Length\\) bytes\" } else { \"FAILED\" })",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\"d:\\\\Express-passport-photo-main\\\\Express-Passport-Photo\\\\.preview.png\"\\); \"W=$\\($img.Width\\) H=$\\($img.Height\\)\"; $img.Dispose\\(\\))",
+      "PowerShell($shot = \"d:\\\\Express-passport-photo-main\\\\Express-Passport-Photo\\\\.preview.png\"; if \\(Test-Path $shot\\) { Remove-Item $shot -Force }; & \"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1400,4600 --screenshot=\"$shot\" \"http://localhost:3000/\" 2>$null | Out-Null; Start-Sleep -Seconds 2; \\(Test-Path $shot\\))"
     ]
   }
 }

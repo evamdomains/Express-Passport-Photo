@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Express Passport Photo – How It Works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    img { display: block; max-width: 100%; }
+    button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+
+    /* ── TOKENS ── */
+    :root {
+      --indigo:       #6366f1;
+      --indigo-dark:  #4f46e5;
+      --blue:         #3b82f6;
+      --blue-dark:    #2563eb;
+      --green:        #22c55e;
+      --green-bg:     #dcfce7;
+      --green-border: #bbf7d0;
+      --green-text:   #15803d;
+      --navy:         #0f172a;
+      --slate:        #475569;
+      --slate-light:  #94a3b8;
+      --border:       rgba(99,102,241,0.13);
+      --card-shadow:  0 8px 40px rgba(99,102,241,0.11), 0 2px 8px rgba(0,0,0,0.04);
+      --card-shadow-hover: 0 24px 60px rgba(99,102,241,0.2), 0 4px 16px rgba(0,0,0,0.08);
+      --radius: 24px;
+    }
+
+    /* ── BODY ── */
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f8fafc;
+      color: var(--navy);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ════════════════════════
+       SECTION
+    ════════════════════════ */
+    .how-section {
+      background: linear-gradient(160deg, #eef2ff 0%, #eff6ff 40%, #f0fdf4 100%);
+      padding: 96px 40px 112px;
+      position: relative;
+      overflow: hidden;
+    }
+    /* subtle background orbs */
+    .how-section::before,
+    .how-section::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .how-section::before {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, #c7d2fe, transparent 70%);
+      top: -200px; left: -200px;
+    }
+    .how-section::after {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #bbf7d0, transparent 70%);
+      bottom: -150px; right: -150px;
+    }
+
+    .section-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    /* ════════════════════════
+       HEADING
+    ════════════════════════ */
+    .heading-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 72px;
+    }
+    .h-line {
+      flex: 1;
+      max-width: 120px;
+      height: 2px;
+      border-radius: 1px;
+      background: linear-gradient(90deg, transparent, var(--indigo));
+    }
+    .h-line.right { background: linear-gradient(90deg, var(--indigo), transparent); }
+    .heading-wrap h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: clamp(1.75rem, 3.5vw, 2.65rem);
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ════════════════════════
+       GRID
+    ════════════════════════ */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: 1fr 52px 1fr 52px 1fr;
+      align-items: center;
+    }
+
+    /* ════════════════════════
+       CONNECTOR
+    ════════════════════════ */
+    .connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .connector::before {
+      content: '';
+      position: absolute;
+      inset: 0; top: 50%; bottom: auto;
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, var(--indigo) 50%, transparent);
+      transform: translateY(-50%);
+    }
+    .c-arrow {
+      position: relative; z-index: 2;
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.45);
+      flex-shrink: 0;
+      transition: transform 250ms ease, box-shadow 250ms ease;
+    }
+    .c-arrow:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(99,102,241,0.55);
+    }
+    .c-arrow svg {
+      width: 16px; height: 16px;
+      fill: none; stroke: #fff;
+      stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    /* ════════════════════════
+       CARD
+    ════════════════════════ */
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 300ms cubic-bezier(.34,1.56,.64,1), box-shadow 300ms ease, border-color 300ms ease;
+      position: relative;
+    }
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: var(--card-shadow-hover);
+      border-color: rgba(99,102,241,0.28);
+    }
+    /* top gradient accent bar */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--indigo), var(--blue));
+      z-index: 5;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    /* Step badge */
+    .step-badge {
+      position: absolute;
+      top: 18px; left: 18px;
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.5), 0 0 0 3px rgba(255,255,255,0.9);
+      z-index: 10;
+    }
+
+    /* ════════════════════════
+       VISUAL PANEL (top half)
+    ════════════════════════ */
+    .visual {
+      width: 100%;
+      height: 230px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    /* ════════════════════════
+       CARD BODY (bottom half)
+    ════════════════════════ */
+    .card-body {
+      padding: 28px 28px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+    .card-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--navy);
+      text-align: center;
+      letter-spacing: -0.01em;
+    }
+    .card-desc {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--slate);
+      text-align: center;
+      line-height: 1.7;
+      max-width: 280px;
+    }
+    .time-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--green-bg);
+      color: var(--green-text);
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      padding: 7px 16px;
+      border-radius: 999px;
+      border: 1.5px solid var(--green-border);
+      margin-top: 6px;
+      letter-spacing: 0.01em;
+    }
+    .time-pill svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ════════════════════════════════════
+       STEP 1 VISUAL — Selfie + Upload card
+    ════════════════════════════════════ */
+    .v1 {
+      background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 100%);
+      display: flex;
+      align-items: stretch;
+    }
+
+    /* selfie photo — left 58% */
+    .v1-photo {
+      width: 58%;
+      height: 100%;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .v1-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+    }
+    /* soft right-edge fade */
+    .v1-photo::after {
+      content: '';
+      position: absolute;
+      inset: 0; left: auto;
+      width: 60px;
+      background: linear-gradient(90deg, transparent, #dbeafe);
+    }
+
+    /* upload card — right */
+    .v1-upload {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px 0 4px;
+    }
+    .upload-card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: 0 12px 36px rgba(99,102,241,0.18), 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 128px;
+      border: 1px solid rgba(99,102,241,0.1);
+    }
+    .uc-thumb {
+      width: 64px; height: 78px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .uc-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: top center;
+    }
+    .uc-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 3px 10px rgba(99,102,241,0.4);
+    }
+    .uc-icon svg { width: 15px; height: 15px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .uc-label { font-size: 0.68rem; color: var(--slate-light); font-weight: 500; letter-spacing: 0.02em; }
+    .uc-bar { width: 96px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+    .uc-fill {
+      height: 100%; width: 100%;
+      background: linear-gradient(90deg, var(--indigo), var(--blue));
+      border-radius: 3px;
+      animation: pulse-bar 2s ease-in-out infinite;
+    }
+    @keyframes pulse-bar { 0%,100%{opacity:1} 50%{opacity:.6} }
+    .uc-pct {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.75rem; font-weight: 700; color: var(--indigo);
+      font-family: 'Poppins', sans-serif;
+    }
+    .uc-tick {
+      width: 16px; height: 16px;
+      background: var(--green); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(34,197,94,.4);
+    }
+    .uc-tick svg { width: 8px; height: 8px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ════════════════════════════════════
+       STEP 2 VISUAL — AI Photo + Checklist
+    ════════════════════════════════════ */
+    .v2 {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 20px 18px;
+    }
+
+    /* AI photo box */
+    .ai-box {
+      position: relative;
+      width: 100px; height: 120px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+    .ai-box img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: top center;
+    }
+    /* corner brackets */
+    .ai-corner {
+      position: absolute;
+      width: 16px; height: 16px;
+      border-color: #22c55e;
+      border-style: solid;
+      pointer-events: none;
+    }
+    .ai-corner.tl { top: 6px; left: 6px; border-width: 3px 0 0 3px; border-radius: 3px 0 0 0; }
+    .ai-corner.tr { top: 6px; right: 6px; border-width: 3px 3px 0 0; border-radius: 0 3px 0 0; }
+    .ai-corner.bl { bottom: 6px; left: 6px; border-width: 0 0 3px 3px; border-radius: 0 0 0 3px; }
+    .ai-corner.br { bottom: 6px; right: 6px; border-width: 0 3px 3px 0; border-radius: 0 0 3px 0; }
+    /* vertical center line */
+    .ai-vline {
+      position: absolute;
+      top: 0; bottom: 0; left: 50%;
+      width: 1px;
+      background: rgba(34,197,94,.5);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    /* face oval */
+    .ai-oval {
+      position: absolute;
+      top: 16px; left: 50%;
+      transform: translateX(-50%);
+      width: 52px; height: 62px;
+      border: 1.5px solid rgba(34,197,94,.65);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    /* eye dots */
+    .ai-eye {
+      position: absolute;
+      width: 8px; height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(34,197,94,1), 0 0 20px rgba(34,197,94,.5);
+      pointer-events: none;
+      animation: eye-glow 2s ease-in-out infinite;
+    }
+    .ai-eye.L { top: 36px; left: 24px; }
+    .ai-eye.R { top: 36px; right: 24px; }
+    @keyframes eye-glow { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* Compliance card */
+    .check-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+      padding: 12px 14px;
+      min-width: 152px;
+      border: 1px solid rgba(34,197,94,0.15);
+      flex-shrink: 0;
+    }
+    .cc-head {
+      display: flex; align-items: center; gap: 7px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 8px;
+    }
+    .cc-head-icon {
+      width: 24px; height: 24px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .cc-head-icon svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+    .cc-head span {
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--navy);
+      font-family: 'Poppins', sans-serif;
+      line-height: 1.2;
+    }
+    .cc-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 3px 0;
+    }
+    .cc-row-label { font-size: 0.7rem; color: var(--slate); font-weight: 500; }
+    .cc-pass {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.65rem; font-weight: 700; color: var(--green-text);
+    }
+    .cc-dot {
+      width: 14px; height: 14px;
+      background: var(--green); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cc-dot svg { width: 7px; height: 7px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .cc-footer {
+      margin-top: 8px;
+      background: var(--green-bg);
+      border: 1px solid var(--green-border);
+      border-radius: 10px;
+      padding: 7px 10px;
+      text-align: center;
+    }
+    .cc-footer-title { display: block; font-size: 0.78rem; font-weight: 700; color: var(--green-text); font-family: 'Poppins', sans-serif; }
+    .cc-footer-sub   { display: block; font-size: 0.63rem; color: #16a34a; margin-top: 1px; }
+
+    /* ════════════════════════════════════
+       STEP 3 VISUAL — Download OR CVS
+    ════════════════════════════════════ */
+    .v3 {
+      background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px 16px;
+    }
+
+    /* columns */
+    .v3-col {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      flex: 1;
+    }
+    .v3-label {
+      font-size: 0.68rem; font-weight: 700;
+      color: var(--indigo);
+      font-family: 'Poppins', sans-serif;
+      text-transform: uppercase; letter-spacing: .1em;
+    }
+
+    /* OR divider */
+    .v3-or {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      flex-shrink: 0;
+    }
+    .or-line { width: 1.5px; height: 32px; background: rgba(99,102,241,0.2); }
+    .or-badge {
+      width: 30px; height: 30px;
+      background: #fff;
+      border: 1.5px solid rgba(99,102,241,0.2);
+      border-radius: 50%;
+      font-size: 0.63rem; font-weight: 700;
+      color: var(--indigo);
+      font-family: 'Poppins', sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.12);
+    }
+
+    /* ── Laptop ── */
+    .laptop-wrap { width: 100px; }
+    .lp-screen {
+      width: 100px; height: 66px;
+      background: #1e1e2e;
+      border-radius: 9px 9px 0 0;
+      border: 2.5px solid #2d2d42;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .lp-screen-inner {
+      width: 86px; height: 54px;
+      background: #dbeafe;
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lp-passport {
+      width: 36px; height: 46px;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 2px solid #93c5fd;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .lp-passport img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: top center;
+    }
+    .lp-hinge { width: 106px; height: 5px; background: #2d2d42; border-radius: 0 0 3px 3px; margin-left: -3px; }
+    .lp-base  { width: 114px; height: 4px; background: #3a3a52; border-radius: 0 0 8px 8px; margin-left: -7px; }
+
+    .dl-btn {
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: #fff;
+      font-size: 0.7rem; font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 8px;
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'Poppins', sans-serif;
+      box-shadow: 0 3px 10px rgba(99,102,241,0.4);
+      transition: box-shadow 200ms, transform 200ms;
+    }
+    .dl-btn:hover { box-shadow: 0 6px 18px rgba(99,102,241,0.5); transform: translateY(-1px); }
+    .dl-btn svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .dl-caption { font-size: 0.63rem; color: var(--slate-light); font-weight: 500; }
+
+    /* ── CVS Store ── */
+    .cvs-store-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+    }
+    .cvs-storefront {
+      width: 100px; height: 68px;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(180deg, #87bdd8 0%, #5a9fc4 50%, #4a8ab0 100%);
+      border: 1.5px solid #7aafc8;
+      box-shadow: 0 4px 14px rgba(0,0,0,.12);
+    }
+    /* sky */
+    .cvs-sky {
+      position: absolute; inset: 0; bottom: auto;
+      height: 40px;
+      background: linear-gradient(180deg, #afd3e8 0%, #87bdd8 100%);
+    }
+    /* building */
+    .cvs-building {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 36px;
+      background: #e8e4de;
+      border-top: 2px solid #d4cfc8;
+    }
+    /* CVS sign board */
+    .cvs-signboard {
+      position: absolute;
+      top: 8px; left: 50%;
+      transform: translateX(-50%);
+      background: #cc0000;
+      border-radius: 5px;
+      padding: 4px 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+      white-space: nowrap;
+    }
+    .cvs-signboard-text {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: .12em;
+      line-height: 1;
+    }
+    /* store door */
+    .cvs-door {
+      position: absolute;
+      bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 18px; height: 26px;
+      background: #7a9cb0;
+      border-radius: 3px 3px 0 0;
+      border: 1.5px solid #6a8ca0;
+    }
+    /* store windows */
+    .cvs-win { position: absolute; bottom: 10px; width: 15px; height: 15px; background: rgba(255,255,255,.45); border-radius: 2px; border: 1px solid rgba(255,255,255,.6); }
+    .cvs-win.L { left: 8px; }
+    .cvs-win.R { right: 8px; }
+
+    /* photo prints grid */
+    .print-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      background: #fff;
+      padding: 5px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.12);
+      border: 1px solid #e2e8f0;
+    }
+    .print-cell {
+      width: 24px; height: 30px;
+      border-radius: 2px;
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+    }
+    .print-cell img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+
+    /* ════════════════════════
+       RESPONSIVE
+    ════════════════════════ */
+    @media (max-width: 960px) {
+      .steps-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 52px auto 52px auto;
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      .connector {
+        width: 100%; height: 52px;
+        justify-content: center;
+      }
+      .connector::before {
+        top: 50%; left: 20%; right: 20%; bottom: auto;
+        height: 1.5px;
+        transform: translateY(-50%);
+        background: linear-gradient(90deg, transparent, var(--indigo) 50%, transparent);
+      }
+      .c-arrow { transform: rotate(90deg); }
+      .c-arrow:hover { transform: rotate(90deg) scale(1.1); }
+      .heading-wrap h2 { white-space: normal; }
+      .h-line { max-width: 60px; }
+    }
+    @media (max-width: 520px) {
+      .how-section { padding: 60px 20px 72px; }
+      .heading-wrap { gap: 12px; margin-bottom: 48px; }
+      .heading-wrap h2 { font-size: 1.45rem; }
+      .h-line { max-width: 36px; }
+      .visual { height: 200px; }
+      .card-body { padding: 22px 20px 26px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .uc-fill, .ai-eye { animation: none; }
+      .card, .c-arrow, .dl-btn { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+<section class="how-section" aria-labelledby="how-title">
+  <div class="section-inner">
+
+    <!-- ── Heading ── -->
+    <div class="heading-wrap">
+      <div class="h-line" aria-hidden="true"></div>
+      <h2 id="how-title">Three steps, under 5 minutes</h2>
+      <div class="h-line right" aria-hidden="true"></div>
+    </div>
+
+    <!-- ── Steps Grid ── -->
+    <div class="steps-grid">
+
+      <!-- ════ CARD 1 ════ -->
+      <article class="card" aria-label="Step 1: Upload your selfie">
+        <div class="step-badge" aria-hidden="true">1</div>
+
+        <div class="visual v1">
+          <!-- Real selfie photo -->
+          <div class="v1-photo">
+            <img
+              src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=480&q=85&fit=crop&crop=top"
+              alt="Man taking a selfie"
+              loading="eager"
+              width="480"
+            />
+          </div>
+          <!-- Upload floating card -->
+          <div class="v1-upload">
+            <div class="upload-card">
+              <div class="uc-thumb">
+                <img
+                  src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=140&q=85&fit=crop&crop=top"
+                  alt="Photo preview"
+                />
+              </div>
+              <div class="uc-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M12 5l-5 5M12 5l5 5"/></svg>
+              </div>
+              <span class="uc-label">Uploading...</span>
+              <div class="uc-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Upload progress 100%">
+                <div class="uc-fill"></div>
+              </div>
+              <div class="uc-pct">
+                100%
+                <div class="uc-tick">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <h3 class="card-title">Upload your selfie</h3>
+          <p class="card-desc">Take a selfie or upload an existing photo. Any background works.</p>
+          <div class="time-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
+            </svg>
+            10 seconds
+          </div>
+        </div>
+      </article>
+
+      <!-- Connector 1 → 2 -->
+      <div class="connector" aria-hidden="true">
+        <div class="c-arrow">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <!-- ════ CARD 2 ════ -->
+      <article class="card" aria-label="Step 2: AI checks compliance">
+        <div class="step-badge" aria-hidden="true">2</div>
+
+        <div class="visual v2">
+          <!-- Passport photo with AI overlay -->
+          <div class="ai-box">
+            <img
+              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=220&q=85&fit=crop&crop=top"
+              alt="Passport photo being analyzed"
+            />
+            <div class="ai-corner tl"></div>
+            <div class="ai-corner tr"></div>
+            <div class="ai-corner bl"></div>
+            <div class="ai-corner br"></div>
+            <div class="ai-vline"></div>
+            <div class="ai-oval"></div>
+            <div class="ai-eye L"></div>
+            <div class="ai-eye R"></div>
+          </div>
+
+          <!-- Compliance checklist -->
+          <div class="check-card">
+            <div class="cc-head">
+              <div class="cc-head-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              </div>
+              <span>AI Compliance<br>Check</span>
+            </div>
+            <div class="cc-row">
+              <span class="cc-row-label">Face size</span>
+              <span class="cc-pass"><span class="cc-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>Pass</span>
+            </div>
+            <div class="cc-row">
+              <span class="cc-row-label">Head position</span>
+              <span class="cc-pass"><span class="cc-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>Pass</span>
+            </div>
+            <div class="cc-row">
+              <span class="cc-row-label">Eye level</span>
+              <span class="cc-pass"><span class="cc-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>Pass</span>
+            </div>
+            <div class="cc-row">
+              <span class="cc-row-label">Lighting</span>
+              <span class="cc-pass"><span class="cc-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>Pass</span>
+            </div>
+            <div class="cc-row">
+              <span class="cc-row-label">Background</span>
+              <span class="cc-pass"><span class="cc-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>Pass</span>
+            </div>
+            <div class="cc-footer">
+              <span class="cc-footer-title">Compliant</span>
+              <span class="cc-footer-sub">Photo approved</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <h3 class="card-title">AI checks compliance</h3>
+          <p class="card-desc">We remove the background, verify face size, position, and lighting.</p>
+          <div class="time-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
+            </svg>
+            ~30 seconds
+          </div>
+        </div>
+      </article>
+
+      <!-- Connector 2 → 3 -->
+      <div class="connector" aria-hidden="true">
+        <div class="c-arrow">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <!-- ════ CARD 3 ════ -->
+      <article class="card" aria-label="Step 3: Download or pick up at CVS">
+        <div class="step-badge" aria-hidden="true">3</div>
+
+        <div class="visual v3">
+
+          <!-- Download column -->
+          <div class="v3-col">
+            <span class="v3-label">Download</span>
+            <div class="laptop-wrap">
+              <div class="lp-screen">
+                <div class="lp-screen-inner">
+                  <div class="lp-passport">
+                    <img
+                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&fit=crop&crop=top"
+                      alt="Passport photo on screen"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="lp-hinge"></div>
+              <div class="lp-base"></div>
+            </div>
+            <button class="dl-btn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v10M7 15l5 5 5-5M4 20h16"/></svg>
+              Download
+            </button>
+            <span class="dl-caption">Instant digital file</span>
+          </div>
+
+          <!-- OR -->
+          <div class="v3-or" aria-label="or">
+            <div class="or-line"></div>
+            <div class="or-badge">OR</div>
+            <div class="or-line"></div>
+          </div>
+
+          <!-- CVS column -->
+          <div class="v3-col">
+            <span class="v3-label">Pick up</span>
+            <div class="cvs-store-wrap">
+              <div class="cvs-storefront" aria-label="CVS store">
+                <div class="cvs-sky"></div>
+                <div class="cvs-building"></div>
+                <div class="cvs-signboard">
+                  <div class="cvs-signboard-text">CVS</div>
+                </div>
+                <div class="cvs-door"></div>
+                <div class="cvs-win L"></div>
+                <div class="cvs-win R"></div>
+              </div>
+              <div class="print-grid" aria-label="Printed passport photos">
+                <div class="print-cell">
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&q=80&fit=crop&crop=top" alt="Print 1"/>
+                </div>
+                <div class="print-cell">
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&q=80&fit=crop&crop=top" alt="Print 2"/>
+                </div>
+                <div class="print-cell">
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&q=80&fit=crop&crop=top" alt="Print 3"/>
+                </div>
+                <div class="print-cell">
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&q=80&fit=crop&crop=top" alt="Print 4"/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="card-body">
+          <h3 class="card-title">Download or pick up</h3>
+          <p class="card-desc">Get an instant download, or pick up 2 prints at your nearest CVS.</p>
+          <div class="time-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            Instant
+          </div>
+        </div>
+      </article>
+
+    </div><!-- /steps-grid -->
+  </div><!-- /section-inner -->
+</section>
+
+</body>
+</html>

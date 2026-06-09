@@ -14,12 +14,12 @@ const CA_HERO_IMAGE_WIDTH = 768;
 const CA_HERO_IMAGE_HEIGHT = 512;
 
 export const metadata: Metadata = {
-  title: 'Canadian Passport Photo Online — $6.99 | 50×70mm, IRCC Compliant',
+  title: 'Canadian Passport Photo Online — $4.99 | 50×70mm, IRCC Compliant',
   description:
-    'Get a compliant Canadian passport photo in 60 seconds. 50×70mm, white background, face height 31–36mm. Meets IRCC requirements. Instant download $6.99.',
+    'Get a compliant Canadian passport photo in 60 seconds. 50×70mm, white background, face height 31–36mm. Meets IRCC requirements. Instant download $4.99.',
   alternates: { canonical: 'https://expresspassportphoto.com/canada-passport-photo' },
   openGraph: {
-    title: 'Canadian Passport Photo — $6.99 | Express Passport Photo',
+    title: 'Canadian Passport Photo — $4.99 | Express Passport Photo',
     description: 'IRCC-compliant Canadian passport photos. 50×70mm, white background. Instant download.',
     images: [{ url: '/og-canada-passport.png', width: 1200, height: 630 }],
   },
@@ -109,7 +109,7 @@ export default function CanadaPassportPhotoPage() {
             href="/upload?type=canadian_passport"
             className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
           >
-            Get My Passport Photo — $6.99
+            Get My Passport Photo — $4.99
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
           </Link>
           <div className="flex items-center justify-center gap-4 mt-4 text-xs text-brand-300 flex-wrap">

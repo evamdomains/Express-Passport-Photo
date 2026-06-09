@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import Flag from '@/components/Flag';
 import BeforeAfterShowcase from '@/components/BeforeAfterShowcase';
+import HowItWorks from '@/components/HowItWorks';
 
 export const metadata: Metadata = {
-  title: 'Passport Photo Online — $6.99 | ICAO Compliant | 60 Seconds',
+  title: 'Passport Photo Online — $4.99 | ICAO Compliant | 60 Seconds',
   description:
-    'Get a government-accepted passport photo in 60 seconds. AI removes background, checks compliance. Instant digital download $6.99. CVS/Walgreens pickup $12.99.',
+    'Get a government-accepted passport photo in 60 seconds. AI removes background, checks compliance. Instant digital download $4.99. CVS/Walgreens pickup $8.99.',
 };
 
 // Compliance example passport photos — one person per card, sliced from the
@@ -15,28 +15,47 @@ export const metadata: Metadata = {
 // '0%' = left, '50%' = center (female), '100%' = right.
 const COMPLIANT_EXAMPLES_IMAGE = '/images/backgrounds/background_4.png';
 
-function PassportPhotoExample({ position }: { position: string }) {
+function PassportPhotoExample({ position, label, size }: { position: string; label: string; size: string }) {
   return (
-    <div className="flex flex-col items-center">
-      <div
-        role="img"
-        aria-label="Example of a compliant passport photo"
-        className="w-28 h-28 sm:w-32 sm:h-32 rounded-lg overflow-hidden border-2 border-gray-100 shadow-sm bg-white"
-        style={{
-          backgroundImage: `url('${COMPLIANT_EXAMPLES_IMAGE}')`,
-          backgroundSize: '300% auto', // 3 panels across; height keeps aspect (cover-style)
-          backgroundPosition: `${position} 50%`,
-          backgroundRepeat: 'no-repeat',
-        }}
-      />
-      <ul className="mt-3 space-y-1 text-xs text-green-600">
-        {['White background', 'Correct size', 'Face centered', 'ICAO compliant'].map((c) => (
-          <li key={c} className="flex items-center gap-1">
-            <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
-            {c}
-          </li>
-        ))}
-      </ul>
+    <div className="group bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden w-full max-w-[320px]">
+      {/* Photo — edge-to-edge at the panel's native 3:4 ratio (single frame, no nesting) */}
+      <div className="relative bg-gray-50">
+        <div
+          role="img"
+          aria-label={`Example of a compliant ${label} photo`}
+          className="w-full aspect-[3/4]"
+          style={{
+            backgroundImage: `url('${COMPLIANT_EXAMPLES_IMAGE}')`,
+            backgroundSize: '300% auto',
+            backgroundPosition: `${position} 50%`,
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
+        {/* Compliant badge */}
+        <div className="absolute top-3 right-3 inline-flex items-center gap-1 bg-green-500 text-white text-[11px] font-bold pl-1.5 pr-2.5 py-1 rounded-full shadow-lg shadow-green-500/30">
+          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+          Compliant
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="p-5">
+        <div className="flex items-center justify-between">
+          <p className="text-base font-bold text-gray-900">{label}</p>
+          <span className="text-xs font-medium text-gray-400">{size}</span>
+        </div>
+        <div className="mt-4 h-px bg-gray-100" />
+        <ul className="mt-4 space-y-2.5">
+          {['White background', 'Correct size & head position', 'Face centered, eyes open', 'ICAO / government compliant'].map((c) => (
+            <li key={c} className="flex items-center gap-2.5 text-sm text-gray-600">
+              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-green-50 shrink-0">
+                <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+              </span>
+              {c}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -104,16 +123,6 @@ const FAQ_ITEMS = [
   },
 ];
 
-// ─── "How it works" banner image ───────────────────────────────────────────
-// To swap this banner later: drop a new file in public/images/backgrounds/
-// and change ONLY this path. No other code changes are required.
-const SECTION_BACKGROUND_IMAGE = '/images/backgrounds/background_1.png';
-// Intrinsic dimensions of the image above — used by next/image to reserve
-// space and preserve aspect ratio (prevents layout shift). Update these only
-// if a replacement image has a different native size.
-const SECTION_BACKGROUND_WIDTH = 1672;
-const SECTION_BACKGROUND_HEIGHT = 941;
-
 export default function HomePage() {
   const schemas = [
     {
@@ -132,7 +141,7 @@ export default function HomePage() {
       description: 'ICAO-compliant passport photo, instant digital download.',
       offers: {
         '@type': 'Offer',
-        price: '6.99',
+        price: '4.99',
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
         url: 'https://expresspassportphoto.com/upload',
@@ -163,7 +172,7 @@ export default function HomePage() {
             </h1>
             <p className="text-brand-100 text-lg mb-8 max-w-lg">
               Upload any selfie. AI removes the background, checks compliance, and delivers a
-              print-ready photo. Starting at $6.99.
+              print-ready photo. Starting at $4.99.
             </p>
 
             {/* CTA */}
@@ -171,7 +180,7 @@ export default function HomePage() {
               href="/upload"
               className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
             >
-              Get My Passport Photo Now — $6.99
+              Get My Passport Photo Now — $4.99
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
               </svg>
@@ -200,18 +209,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── How it works (full-width banner) ─────────────────────────────── */}
-      <section className="w-full">
-        <Image
-          src={SECTION_BACKGROUND_IMAGE}
-          width={SECTION_BACKGROUND_WIDTH}
-          height={SECTION_BACKGROUND_HEIGHT}
-          alt="Three steps to a compliant passport photo in under 5 minutes: upload your selfie, our AI checks compliance, then download or pick up your prints."
-          sizes="100vw"
-          className="w-full h-auto"
-          priority={false}
-        />
-      </section>
+      {/* ── How it works (native 3-step section) ─────────────────────────── */}
+      <HowItWorks />
 
       {/* ── Document types ───────────────────────────────────────────────── */}
       <section className="bg-gray-50 py-16 px-4">
@@ -246,13 +245,18 @@ export default function HomePage() {
       </section>
 
       {/* ── Compliance examples ──────────────────────────────────────────── */}
-      <section className="max-w-5xl mx-auto px-4 py-16 sm:py-20">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-3">What a compliant photo looks like</h2>
-        <p className="text-center text-gray-500 text-sm mb-10">Every photo we produce meets these standards automatically</p>
-        <div className="flex justify-center gap-8 sm:gap-16 flex-wrap">
-          <PassportPhotoExample position="0%" />
-          <PassportPhotoExample position="50%" />
-          <PassportPhotoExample position="100%" />
+      <section className="max-w-6xl mx-auto px-4 py-16 sm:py-20">
+        <div className="text-center mb-12 sm:mb-14">
+          <p className="text-brand-600 text-sm font-semibold uppercase tracking-widest mb-2">Compliance guaranteed</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
+            What a compliant photo <span className="text-brand-600">looks like</span>
+          </h2>
+          <p className="text-gray-500 text-base mt-3">Every photo we produce meets these standards automatically.</p>
+        </div>
+        <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
+          <PassportPhotoExample position="0%" label="US Passport" size="2×2 in" />
+          <PassportPhotoExample position="50%" label="US Visa" size="2×2 in" />
+          <PassportPhotoExample position="100%" label="Green Card" size="2×2 in" />
         </div>
       </section>
 
@@ -298,54 +302,95 @@ export default function HomePage() {
       </section>
 
       {/* ── Comparison table ─────────────────────────────────────────────── */}
-      <section className="bg-gray-50 py-16 px-4">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">How we compare</h2>
-          <div className="overflow-x-auto rounded-2xl shadow-sm border border-gray-100">
-            <table className="w-full text-sm bg-white">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left p-4 font-semibold text-gray-500 w-40">Feature</th>
-                  <th className="p-4 font-bold text-brand-700 bg-brand-50 border-x border-brand-100">
-                    <div className="text-center">Express Passport Photo</div>
-                    <div className="text-xs font-normal text-brand-500 text-center mt-0.5">from $6.99</div>
-                  </th>
-                  <th className="p-4 font-semibold text-gray-600 text-center">At a Pharmacy</th>
-                  <th className="p-4 font-semibold text-gray-600 text-center">Other Online</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['Price', '$6.99', '$15–$20', '$10–$15'],
-                  ['Wait time', '60 seconds', '30–60 min', '15–60 min'],
-                  ['Available 24/7', true, false, true],
-                  ['AI compliance check', true, false, '~50%'],
-                  ['Instant download', true, false, true],
-                  ['Store pickup option', true, '(you\'re already there)', false],
-                  ['Money-back guarantee', true, false, '~20%'],
-                  ['No account required', true, true, false],
-                ].map(([feature, us, store, other], i) => {
-                  const renderCell = (val: string | boolean) => {
-                    if (typeof val === 'boolean') {
-                      return val
-                        ? <span className="text-green-500 font-bold text-base">✓</span>
-                        : <span className="text-red-400">✗</span>;
-                    }
-                    return <span className="text-gray-700">{val}</span>;
-                  };
-                  return (
-                    <tr key={i} className={`border-b border-gray-50 ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
-                      <td className="p-4 text-gray-600 font-medium">{feature}</td>
-                      <td className="p-4 text-center bg-brand-50/50 border-x border-brand-100 font-semibold">
-                        {renderCell(us)}
-                      </td>
-                      <td className="p-4 text-center">{renderCell(store)}</td>
-                      <td className="p-4 text-center">{renderCell(other)}</td>
+      <section className="bg-gradient-to-b from-gray-50 to-white py-16 sm:py-24 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14 sm:mb-16">
+            <p className="text-brand-600 text-sm font-semibold uppercase tracking-widest mb-2">Why Express Passport Photo</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
+              How we <span className="text-brand-600">compare</span>
+            </h2>
+          </div>
+
+          {(() => {
+            const Tick = () => (
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-green-100">
+                <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+              </span>
+            );
+            const Cross = () => (
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-50">
+                <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+              </span>
+            );
+            const cell = (val: string | boolean, accent = false) => {
+              if (typeof val === 'boolean') return val ? <Tick /> : <Cross />;
+              return <span className={accent ? 'font-extrabold text-brand-700' : 'text-gray-500 text-sm'}>{val}</span>;
+            };
+            const rows: [string, string | boolean, string | boolean, string | boolean][] = [
+              ['Price', '$4.99', '$15–$20', '$10–$15'],
+              ['Wait time', '60 seconds', '30–60 min', '15–60 min'],
+              ['Available 24/7', true, false, true],
+              ['AI compliance check', true, false, '~50%'],
+              ['Instant download', true, false, true],
+              ['Store pickup option', true, "You're already there", false],
+              ['Money-back guarantee', true, false, '~20%'],
+              ['No account required', true, true, false],
+            ];
+            return (
+              <div className="overflow-x-auto pt-5 pb-2">
+                <table className="w-full border-separate border-spacing-0 min-w-[640px]">
+                  <thead>
+                    <tr>
+                      <th className="text-left align-bottom p-5 font-semibold text-gray-400 text-sm w-1/4">Feature</th>
+                      {/* Featured column header — lifts above the table */}
+                      <th className="w-1/4 p-0 align-bottom">
+                        <div className="relative bg-gradient-to-br from-brand-600 to-brand-700 text-white rounded-t-2xl px-4 pt-6 pb-5 shadow-xl shadow-brand-600/20">
+                          <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full shadow-md whitespace-nowrap">
+                            Best value
+                          </span>
+                          <div className="font-extrabold text-base leading-tight">Express<br />Passport Photo</div>
+                          <div className="text-xs font-medium text-brand-100 mt-1">from $4.99</div>
+                        </div>
+                      </th>
+                      <th className="w-1/4 p-5 align-bottom font-semibold text-gray-500 text-center">At a Pharmacy</th>
+                      <th className="w-1/4 p-5 align-bottom font-semibold text-gray-500 text-center">Other Online</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {rows.map(([feature, us, store, other], i) => {
+                      const last = i === rows.length - 1;
+                      return (
+                        <tr key={feature} className="group">
+                          <td className={`p-5 text-gray-600 font-medium text-sm ${!last ? 'border-b border-gray-100' : ''}`}>{feature}</td>
+                          {/* Featured column body — tinted, ring, rounded bottom on last row */}
+                          <td className={`p-5 text-center bg-brand-50 border-x-2 border-brand-100 ${last ? 'rounded-b-2xl border-b-2' : ''}`}>
+                            <div className="flex items-center justify-center">{cell(us, true)}</div>
+                          </td>
+                          <td className={`p-5 text-center ${!last ? 'border-b border-gray-100' : ''}`}>
+                            <div className="flex items-center justify-center">{cell(store)}</div>
+                          </td>
+                          <td className={`p-5 text-center ${!last ? 'border-b border-gray-100' : ''}`}>
+                            <div className="flex items-center justify-center">{cell(other)}</div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+
+          <div className="text-center mt-12">
+            <Link
+              href="/upload"
+              className="inline-flex items-center gap-2 bg-brand-600 text-white font-bold px-8 py-4 rounded-2xl text-base shadow-lg shadow-brand-600/25 hover:bg-brand-700 hover:shadow-xl transition-all"
+            >
+              Get my photo — $4.99
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
         </div>
       </section>
@@ -357,7 +402,7 @@ export default function HomePage() {
         <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
           <div className="border border-gray-200 rounded-2xl p-7 flex flex-col">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Digital Download</p>
-            <p className="text-5xl font-extrabold mb-1">$6.99</p>
+            <p className="text-5xl font-extrabold mb-1">$4.99</p>
             <p className="text-gray-400 text-sm mb-5">High-res JPEG + print-ready 4×6 PDF</p>
             <ul className="space-y-2 text-sm text-gray-600 mb-7 flex-1">
               {['Instant email delivery', 'Print at any pharmacy or lab', 'Unlimited reprints'].map((f) => (
@@ -368,7 +413,7 @@ export default function HomePage() {
               ))}
             </ul>
             <Link href="/upload" className="block text-center bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 transition-colors">
-              Get My Photo — $6.99
+              Get My Photo — $4.99
             </Link>
           </div>
 
@@ -377,7 +422,7 @@ export default function HomePage() {
               MOST POPULAR
             </span>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Printed &amp; Ready</p>
-            <p className="text-5xl font-extrabold mb-1">$12.99</p>
+            <p className="text-5xl font-extrabold mb-1">$8.99</p>
             <p className="text-gray-400 text-sm mb-5">2 prints ready at CVS or Walgreens</p>
             <ul className="space-y-2 text-sm text-gray-600 mb-7 flex-1">
               {['Ready for pickup in ~1 hour', 'Professional photo paper', 'Digital copy included'].map((f) => (
@@ -388,7 +433,7 @@ export default function HomePage() {
               ))}
             </ul>
             <Link href="/upload" className="block text-center bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 transition-colors">
-              Get Prints — $12.99
+              Get Prints — $8.99
             </Link>
           </div>
         </div>
@@ -429,7 +474,7 @@ export default function HomePage() {
           href="/upload"
           className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-10 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
         >
-          Get My Passport Photo Now — $6.99
+          Get My Passport Photo Now — $4.99
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/>
           </svg>
