@@ -111,7 +111,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How does the CVS/Walgreens pickup work?',
-    a: 'During checkout, enter your zip code and select a nearby store with photo printing. We upload your photos to that store. You get an email when ready — usually within an hour.',
+    a: 'During checkout, enter your zip code and select a nearby store with photo printing. We upload your photos to that store. You get an email when ready — usually within 3 hours.',
   },
   {
     q: 'Is my photo stored permanently?',
@@ -423,9 +423,9 @@ export default function HomePage() {
             </span>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Printed &amp; Ready</p>
             <p className="text-5xl font-extrabold mb-1">$8.99</p>
-            <p className="text-gray-400 text-sm mb-5">2 prints ready at CVS or Walgreens</p>
+            <p className="text-gray-400 text-sm mb-5">6 prints ready at CVS or Walgreens</p>
             <ul className="space-y-2 text-sm text-gray-600 mb-7 flex-1">
-              {['Ready for pickup in ~1 hour', 'Professional photo paper', 'Digital copy included'].map((f) => (
+              {['Ready for pickup in ~3 hours', 'Professional photo paper', 'Digital copy included'].map((f) => (
                 <li key={f} className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
                   {f}

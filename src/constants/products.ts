@@ -20,13 +20,13 @@ export const PRODUCTS: ProductOption[] = [
     name: 'Printed & Ready',
     price: 8.99,
     priceId: process.env.STRIPE_PRICE_PRINTED ?? '',
-    description: 'Pick up 2 prints at CVS or Walgreens',
+    description: 'Pick up 6 prints at CVS or Walgreens',
     features: [
-      '2 prints on professional photo paper',
+      '6 prints on professional photo paper',
       'Meets all official size requirements',
       'Ready for pickup at your nearest store',
       'Digital copy included',
     ],
-    turnaround: '~1 hour',
+    turnaround: '~3 hours',
   },
 ];

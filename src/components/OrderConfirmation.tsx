@@ -73,7 +73,7 @@ export default function OrderConfirmation() {
         <p className="text-gray-500 max-w-md mx-auto">
           {isDigital
             ? 'Download your files below. We also sent them to your email.'
-            : 'We\'re uploading your prints now. You\'ll get an email with pickup details in about an hour.'}
+            : 'We\'re uploading your prints now. You\'ll get an email with pickup details in about 3 hours.'}
         </p>
       </div>
 

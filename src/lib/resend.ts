@@ -86,7 +86,7 @@ export async function sendOrderConfirmationEmail({
         <p style="color:#374151;margin-bottom:16px">
           We've received your order for a <strong>${documentTypeName}</strong> photo.
           We're uploading your prints to the store now — you'll get another email with
-          your pickup details once they're ready (usually within 1 hour).
+          your pickup details once they're ready (usually within 3 hours).
         </p>
         <div style="background:#f3f4f6;border-radius:8px;padding:16px;margin-bottom:24px">
           <p style="margin:0 0 4px;font-weight:600;color:#111827">${storeName}</p>
