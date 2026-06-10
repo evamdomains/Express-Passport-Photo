@@ -290,7 +290,7 @@ export default function HowItWorks() {
 
             <div className={styles['card-body']}>
               <h3 className={styles['card-title']}>Download or pick up</h3>
-              <p className={styles['card-desc']}>Get an instant download, or pick up 6 prints at your nearest CVS.</p>
+              <p className={styles['card-desc']}>Get an instant download, or pick up 6 pics at your nearest CVS.</p>
               <div className={styles['time-pill']}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />

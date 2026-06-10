@@ -423,7 +423,7 @@ export default function HomePage() {
             </span>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Printed &amp; Ready</p>
             <p className="text-5xl font-extrabold mb-1">$8.99</p>
-            <p className="text-gray-400 text-sm mb-5">6 prints ready at CVS or Walgreens</p>
+            <p className="text-gray-400 text-sm mb-5">6 pics ready at CVS or Walgreens</p>
             <ul className="space-y-2 text-sm text-gray-600 mb-7 flex-1">
               {['Ready for pickup in ~3 hours', 'Professional photo paper', 'Digital copy included'].map((f) => (
                 <li key={f} className="flex items-center gap-2">

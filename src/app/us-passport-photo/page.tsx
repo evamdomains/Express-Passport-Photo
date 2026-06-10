@@ -33,7 +33,7 @@ const FAQS = [
   { q: 'How recent does my passport photo need to be?', a: 'Within the last 6 months. The photo must represent your current appearance. Significant changes (new beard, major weight change) may require a retake.' },
   { q: 'Can I take my own passport photo at home?', a: 'Yes. Take a selfie against any background — we replace it automatically with compliant white. Good lighting and a neutral expression are all you need.' },
   { q: 'What if my passport photo is rejected by the government?', a: 'We offer a 100% refund if your photo is rejected for any compliance reason covered by our checks. See our refund policy for full details.' },
-  { q: 'What format do I receive my files in?', a: 'Digital Download ($4.99): a high-res JPEG plus a print-ready 4×6 PDF with multiple copies tiled. Printed & Ready ($8.99): six physical prints at a nearby CVS or Walgreens.' },
+  { q: 'What format do I receive my files in?', a: 'Digital Download ($4.99): a high-res JPEG plus a print-ready 4×6 PDF with multiple copies tiled. Printed & Ready ($8.99): six physical pics at a nearby CVS or Walgreens.' },
   { q: 'How do I print my digital passport photo?', a: 'Take the 4×6 PDF to any CVS, Walgreens, or photo lab and ask for a standard 4×6 print. Cut out the photos. Printing typically costs $0.35–$0.50.' },
   { q: 'Is a US passport photo the same as a US visa photo?', a: 'Yes — identical specifications: 2×2 inches, white background, head 50–69% of frame. One set of photos works for both a passport and a US visa application.' },
   { q: 'Can babies and infants have passport photos taken?', a: 'Yes, but the same rules apply. Eyes must be open and looking at the camera. The infant must be alone in the photo — no hands or car seats visible.' },
