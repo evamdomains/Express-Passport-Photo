@@ -19,11 +19,11 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: {
-    default: 'Passport Photo Online — $4.99 | ICAO Compliant | Express Passport Photo',
+    default: 'Passport Photo Online — $0.99 | ICAO Compliant | Express Passport Photo',
     template: '%s | Express Passport Photo',
   },
   description:
-    'ICAO-compliant passport photos in 60 seconds. AI removes background, checks compliance. Digital download $4.99. CVS/Walgreens pickup $8.99. Money-back guarantee.',
+    'ICAO-compliant passport photos in 60 seconds. AI removes background, checks compliance. Digital download $0.99. CVS/Walgreens pickup $0.99. Money-back guarantee.',
   metadataBase: new URL('https://expresspassportphoto.com'),
   icons: {
     icon: '/images/backgrounds/favicon.png',
@@ -167,7 +167,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   href="/upload"
                   className="inline-flex items-center gap-2 bg-brand-600 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-sm hover:bg-brand-700 transition-colors mt-5"
                 >
-                  From $4.99
+                  From $0.99
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
                 </a>
               </div>

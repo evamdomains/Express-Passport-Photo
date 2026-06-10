@@ -5,9 +5,9 @@ import BeforeAfterShowcase from '@/components/BeforeAfterShowcase';
 import HowItWorks from '@/components/HowItWorks';
 
 export const metadata: Metadata = {
-  title: 'Passport Photo Online — $4.99 | ICAO Compliant | 60 Seconds',
+  title: 'Passport Photo Online — $0.99 | ICAO Compliant | 60 Seconds',
   description:
-    'Get a government-accepted passport photo in 60 seconds. AI removes background, checks compliance. Instant digital download $4.99. CVS/Walgreens pickup $8.99.',
+    'Get a government-accepted passport photo in 60 seconds. AI removes background, checks compliance. Instant digital download $0.99. CVS/Walgreens pickup $0.99.',
 };
 
 // Compliance example passport photos — one person per card, sliced from the
@@ -141,7 +141,7 @@ export default function HomePage() {
       description: 'ICAO-compliant passport photo, instant digital download.',
       offers: {
         '@type': 'Offer',
-        price: '4.99',
+        price: '0.99',
         priceCurrency: 'USD',
         availability: 'https://schema.org/InStock',
         url: 'https://expresspassportphoto.com/upload',
@@ -172,7 +172,7 @@ export default function HomePage() {
             </h1>
             <p className="text-brand-100 text-lg mb-8 max-w-lg">
               Upload any selfie. AI removes the background, checks compliance, and delivers a
-              print-ready photo. Starting at $4.99.
+              print-ready photo. Starting at $0.99.
             </p>
 
             {/* CTA */}
@@ -180,7 +180,7 @@ export default function HomePage() {
               href="/upload"
               className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
             >
-              Get My Passport Photo Now — $4.99
+              Get My Passport Photo Now — $0.99
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
               </svg>
@@ -327,7 +327,7 @@ export default function HomePage() {
               return <span className={accent ? 'font-extrabold text-brand-700' : 'text-gray-500 text-sm'}>{val}</span>;
             };
             const rows: [string, string | boolean, string | boolean, string | boolean][] = [
-              ['Price', '$4.99', '$15–$20', '$10–$15'],
+              ['Price', '$0.99', '$15–$20', '$10–$15'],
               ['Wait time', '60 seconds', '30–60 min', '15–60 min'],
               ['Available 24/7', true, false, true],
               ['AI compliance check', true, false, '~50%'],
@@ -349,7 +349,7 @@ export default function HomePage() {
                             Best value
                           </span>
                           <div className="font-extrabold text-base leading-tight">Express<br />Passport Photo</div>
-                          <div className="text-xs font-medium text-brand-100 mt-1">from $4.99</div>
+                          <div className="text-xs font-medium text-brand-100 mt-1">from $0.99</div>
                         </div>
                       </th>
                       <th className="w-1/4 p-5 align-bottom font-semibold text-gray-500 text-center">At a Pharmacy</th>
@@ -386,7 +386,7 @@ export default function HomePage() {
               href="/upload"
               className="inline-flex items-center gap-2 bg-brand-600 text-white font-bold px-8 py-4 rounded-2xl text-base shadow-lg shadow-brand-600/25 hover:bg-brand-700 hover:shadow-xl transition-all"
             >
-              Get my photo — $4.99
+              Get my photo — $0.99
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
               </svg>
@@ -402,7 +402,7 @@ export default function HomePage() {
         <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
           <div className="border border-gray-200 rounded-2xl p-7 flex flex-col">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Digital Download</p>
-            <p className="text-5xl font-extrabold mb-1">$4.99</p>
+            <p className="text-5xl font-extrabold mb-1">$0.99</p>
             <p className="text-gray-400 text-sm mb-5">High-res JPEG + print-ready 4×6 PDF</p>
             <ul className="space-y-2 text-sm text-gray-600 mb-7 flex-1">
               {['Instant email delivery', 'Print at any pharmacy or lab', 'Unlimited reprints'].map((f) => (
@@ -413,7 +413,7 @@ export default function HomePage() {
               ))}
             </ul>
             <Link href="/upload" className="block text-center bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 transition-colors">
-              Get My Photo — $4.99
+              Get My Photo — $0.99
             </Link>
           </div>
 
@@ -422,7 +422,7 @@ export default function HomePage() {
               MOST POPULAR
             </span>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Printed &amp; Ready</p>
-            <p className="text-5xl font-extrabold mb-1">$8.99</p>
+            <p className="text-5xl font-extrabold mb-1">$0.99</p>
             <p className="text-gray-400 text-sm mb-5">6 pics ready at CVS or Walgreens</p>
             <ul className="space-y-2 text-sm text-gray-600 mb-7 flex-1">
               {['Ready for pickup in ~3 hours', 'Professional photo paper', 'Digital copy included'].map((f) => (
@@ -433,7 +433,7 @@ export default function HomePage() {
               ))}
             </ul>
             <Link href="/upload" className="block text-center bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 transition-colors">
-              Get Prints — $8.99
+              Get Prints — $0.99
             </Link>
           </div>
         </div>
@@ -474,7 +474,7 @@ export default function HomePage() {
           href="/upload"
           className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-10 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
         >
-          Get My Passport Photo Now — $4.99
+          Get My Passport Photo Now — $0.99
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/>
           </svg>

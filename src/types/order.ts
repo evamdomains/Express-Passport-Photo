@@ -48,7 +48,6 @@ export interface ProductOption {
   sku: ProductSku;
   name: string;
   price: number;
-  priceId: string;
   description: string;
   features: string[];
   turnaround: string;

@@ -100,7 +100,7 @@ export default function UploadPage() {
 
             {/* Secondary text */}
             <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-500">
-              <span className="font-semibold text-gray-700">Starting at $4.99</span>
+              <span className="font-semibold text-gray-700">Starting at $0.99</span>
               <span className="text-gray-300">·</span>
               <span>No Account Required</span>
               <span className="text-gray-300">·</span>

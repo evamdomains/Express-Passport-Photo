@@ -14,12 +14,12 @@ const US_HERO_IMAGE_WIDTH = 768;
 const US_HERO_IMAGE_HEIGHT = 512;
 
 export const metadata: Metadata = {
-  title: 'US Passport Photo Online — $4.99 | 2×2 Inches, ICAO Compliant',
+  title: 'US Passport Photo Online — $0.99 | 2×2 Inches, ICAO Compliant',
   description:
-    'Get a compliant US passport photo in 60 seconds. 2×2 inches, white background, ICAO compliant. Instant download $4.99. Meets all State Department requirements.',
+    'Get a compliant US passport photo in 60 seconds. 2×2 inches, white background, ICAO compliant. Instant download $0.99. Meets all State Department requirements.',
   alternates: { canonical: 'https://expresspassportphoto.com/us-passport-photo' },
   openGraph: {
-    title: 'US Passport Photo — $4.99 | Express Passport Photo',
+    title: 'US Passport Photo — $0.99 | Express Passport Photo',
     description: 'ICAO-compliant US passport photos. 2×2 inches, white background. Instant download.',
     images: [{ url: '/og-us-passport.png', width: 1200, height: 630 }],
   },
@@ -33,7 +33,7 @@ const FAQS = [
   { q: 'How recent does my passport photo need to be?', a: 'Within the last 6 months. The photo must represent your current appearance. Significant changes (new beard, major weight change) may require a retake.' },
   { q: 'Can I take my own passport photo at home?', a: 'Yes. Take a selfie against any background — we replace it automatically with compliant white. Good lighting and a neutral expression are all you need.' },
   { q: 'What if my passport photo is rejected by the government?', a: 'We offer a 100% refund if your photo is rejected for any compliance reason covered by our checks. See our refund policy for full details.' },
-  { q: 'What format do I receive my files in?', a: 'Digital Download ($4.99): a high-res JPEG plus a print-ready 4×6 PDF with multiple copies tiled. Printed & Ready ($8.99): six physical pics at a nearby CVS or Walgreens.' },
+  { q: 'What format do I receive my files in?', a: 'Digital Download ($0.99): a high-res JPEG plus a print-ready 4×6 PDF with multiple copies tiled. Printed & Ready ($0.99): six physical pics at a nearby CVS or Walgreens.' },
   { q: 'How do I print my digital passport photo?', a: 'Take the 4×6 PDF to any CVS, Walgreens, or photo lab and ask for a standard 4×6 print. Cut out the photos. Printing typically costs $0.35–$0.50.' },
   { q: 'Is a US passport photo the same as a US visa photo?', a: 'Yes — identical specifications: 2×2 inches, white background, head 50–69% of frame. One set of photos works for both a passport and a US visa application.' },
   { q: 'Can babies and infants have passport photos taken?', a: 'Yes, but the same rules apply. Eyes must be open and looking at the camera. The infant must be alone in the photo — no hands or car seats visible.' },
@@ -109,7 +109,7 @@ export default function USPassportPhotoPage() {
             href="/upload?type=us_passport"
             className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
           >
-            Get My Passport Photo — $4.99
+            Get My Passport Photo — $0.99
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
           </Link>
           <div className="flex items-center justify-center gap-4 mt-4 text-xs text-brand-300 flex-wrap">

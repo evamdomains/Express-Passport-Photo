@@ -15,9 +15,9 @@ const BABY_HERO_RIGHT_WIDTH = 794;
 const BABY_HERO_RIGHT_HEIGHT = 658;
 
 export const metadata: Metadata = {
-  title: 'Baby Passport Photo Online — $4.99 | 2×2 Inches, ICAO Compliant',
+  title: 'Baby Passport Photo Online — $0.99 | 2×2 Inches, ICAO Compliant',
   description:
-    'Get a compliant baby or infant passport photo in 60 seconds. 2×2 inches, white background, State Department compliant. AI removes the background — no studio needed. Instant download $4.99.',
+    'Get a compliant baby or infant passport photo in 60 seconds. 2×2 inches, white background, State Department compliant. AI removes the background — no studio needed. Instant download $0.99.',
   keywords: [
     'baby passport photo',
     'infant passport photo',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: 'https://expresspassportphoto.com/baby-passport-photo' },
   openGraph: {
-    title: 'Baby Passport Photo — $4.99 | Express Passport Photo',
+    title: 'Baby Passport Photo — $0.99 | Express Passport Photo',
     description: 'ICAO-compliant baby & infant passport photos. 2×2 inches, white background. Take it at home, no studio needed.',
     images: [{ url: '/og-baby-passport.png', width: 1200, height: 630 }],
   },
@@ -118,7 +118,7 @@ export default function BabyPassportPhotoPage() {
               href="/upload?type=baby_passport"
               className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
             >
-              Get My Baby&apos;s Passport Photo — $4.99
+              Get My Baby&apos;s Passport Photo — $0.99
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
             </Link>
             <div className="flex items-center justify-center gap-4 mt-4 text-xs text-brand-300 flex-wrap">

@@ -6,13 +6,16 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function createCheckoutSession({
-  priceId,
+  productName,
+  unitAmount,
   orderId,
   email,
   successUrl,
   cancelUrl,
 }: {
-  priceId: string;
+  productName: string;
+  /** Amount to charge, in cents (e.g. $0.99 → 99). */
+  unitAmount: number;
   orderId: string;
   email?: string;
   successUrl: string;
@@ -21,7 +24,18 @@ export async function createCheckoutSession({
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
-    line_items: [{ price: priceId, quantity: 1 }],
+    // Price is defined inline from our own product config (no pre-created
+    // Stripe Price ID needed), so the amount always matches products.ts.
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: { name: productName },
+          unit_amount: unitAmount,
+        },
+        quantity: 1,
+      },
+    ],
     customer_email: email,
     metadata: { orderId },
     success_url: successUrl,

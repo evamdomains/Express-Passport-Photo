@@ -88,7 +88,8 @@ export async function POST(req: NextRequest) {
     let session;
     try {
       session = await createCheckoutSession({
-        priceId: product.priceId,
+        productName: product.name,
+        unitAmount: Math.round(product.price * 100),
         orderId,
         email,
         successUrl: `${appUrl}/order-confirmation?orderId=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
         api: 'Stripe',
         error: stripeError,
         orderId,
-        context: { operation: 'createCheckoutSession', sku, priceId: product.priceId },
+        context: { operation: 'createCheckoutSession', sku, unitAmount: Math.round(product.price * 100) },
       });
       throw stripeError;
     }
