@@ -6,16 +6,15 @@ const FROM = process.env.RESEND_FROM_EMAIL ?? 'noreply@expresspassportphoto.com'
 export async function sendDigitalDownloadEmail({
   to,
   orderId,
-  downloadUrl,
-  processedUrl,
-  compositeUrl,
+  jpegUrl,
+  pdfUrl,
   documentTypeName,
 }: {
   to: string;
   orderId: string;
-  downloadUrl: string;
-  processedUrl: string;
-  compositeUrl: string;
+  /** Secure application download routes (never expire; mint signed URLs on click). */
+  jpegUrl: string;
+  pdfUrl: string;
   documentTypeName: string;
 }) {
   return resend.emails.send({
@@ -31,14 +30,14 @@ export async function sendDigitalDownloadEmail({
         <table cellpadding="0" cellspacing="0" style="margin-bottom:24px">
           <tr>
             <td style="padding-right:12px">
-              <a href="${downloadUrl}"
+              <a href="${pdfUrl}"
                  style="display:inline-block;background:#1A3A5C;color:#fff;padding:14px 24px;
                         border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
                 Download Print-Ready PDF
               </a>
             </td>
             <td>
-              <a href="${processedUrl}"
+              <a href="${jpegUrl}"
                  style="display:inline-block;background:#e5e7eb;color:#1A3A5C;padding:14px 24px;
                         border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
                 Download JPEG

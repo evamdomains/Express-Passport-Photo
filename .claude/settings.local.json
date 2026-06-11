@@ -19,7 +19,22 @@
       "PowerShell($chrome = @\\(\"$env:ProgramFiles\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\",\"${env:ProgramFiles\\(x86\\)}\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\",\"$env:ProgramFiles \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\",\"${env:ProgramFiles\\(x86\\)}\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\",\"$env:ProgramFiles\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"\\) | Where-Object { Test-Path $_ } | Select-Object -First 1; if \\($chrome\\) { \"FOUND: $chrome\" } else { \"NONE\" })",
       "PowerShell($shot = \"d:\\\\Express-passport-photo-main\\\\Express-Passport-Photo\\\\.preview.png\"; if \\(Test-Path $shot\\) { Remove-Item $shot -Force }; & \"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1400,3200 --screenshot=\"$shot\" \"http://localhost:3000/\" 2>$null | Out-Null; Start-Sleep -Seconds 2; if \\(Test-Path $shot\\) { \"OK $\\(\\(Get-Item $shot\\).Length\\) bytes\" } else { \"FAILED\" })",
       "PowerShell(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(\"d:\\\\Express-passport-photo-main\\\\Express-Passport-Photo\\\\.preview.png\"\\); \"W=$\\($img.Width\\) H=$\\($img.Height\\)\"; $img.Dispose\\(\\))",
-      "PowerShell($shot = \"d:\\\\Express-passport-photo-main\\\\Express-Passport-Photo\\\\.preview.png\"; if \\(Test-Path $shot\\) { Remove-Item $shot -Force }; & \"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1400,4600 --screenshot=\"$shot\" \"http://localhost:3000/\" 2>$null | Out-Null; Start-Sleep -Seconds 2; \\(Test-Path $shot\\))"
+      "PowerShell($shot = \"d:\\\\Express-passport-photo-main\\\\Express-Passport-Photo\\\\.preview.png\"; if \\(Test-Path $shot\\) { Remove-Item $shot -Force }; & \"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1400,4600 --screenshot=\"$shot\" \"http://localhost:3000/\" 2>$null | Out-Null; Start-Sleep -Seconds 2; \\(Test-Path $shot\\))",
+      "Bash(curl -sSL -o public/models/face_landmarker.task \"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task\")",
+      "Bash(rm -f scripts/verify-face-scaling.mjs)",
+      "Bash(rmdir scripts *)",
+      "Bash(rm -f src/lib/lighting.ts src/lib/__tests__/lighting.test.ts)",
+      "Bash(rmdir src/lib/__tests__)",
+      "Bash(curl -sSL -o public/models/efficientdet_lite0.tflite \"https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float32/1/efficientdet_lite0.tflite\")",
+      "Bash(curl -sSL -o public/models/efficientdet_lite0.tflite \"https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite\")",
+      "PowerShell(npm run type-check)",
+      "PowerShell(npx vitest run src/lib/face/__tests__/baby-objects.test.ts src/lib/face/__tests__/document-rules.test.ts)",
+      "PowerShell(npx vitest run 2>&1)",
+      "PowerShell(npx vitest run src/lib/face/__tests__/compliance-gate.test.ts 2>&1)",
+      "PowerShell(npx vitest run src/lib/face/__tests__/two-stage-workflow.test.ts 2>&1)"
+    ],
+    "additionalDirectories": [
+      "D:\\Express-passport-photo-main\\Express-Passport-Photo\\node_modules\\@mediapipe\\tasks-vision\\wasm"
     ]
   }
 }

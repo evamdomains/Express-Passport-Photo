@@ -7,10 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aws-sdk/client-rekognition": "^3.699.0",
+    "@mediapipe/tasks-vision": "^0.10.35",
     "@stripe/stripe-js": "^4.8.0",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.46.2",
@@ -31,6 +34,7 @@
     "eslint-config-next": "^16.2.6",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.8"
   }
 }

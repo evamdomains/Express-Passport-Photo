@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
       `orders/${order.id}/original.jpg`,
       `orders/${order.id}/processed.jpg`,
       `orders/${order.id}/composite.jpg`,
+      `orders/${order.id}/preview.jpg`,
       `orders/${order.id}/print.pdf`,
     ];
 

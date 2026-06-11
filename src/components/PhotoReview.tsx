@@ -2,9 +2,39 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import ComplianceChecker from './ComplianceChecker';
+import PassportPreview from './PassportPreview';
 import type { Order } from '@/types/order';
+import { DOCUMENT_SPECS } from '@/constants/document-specs';
+import { getBiometricConfig, targetEyeLineFromTop } from '@/lib/face/biometric-config';
+
+const EYE_FROM_CROWN = 0.46; // fraction of head height above the eyes (fallback)
+
+/**
+ * Country-aware overlay metadata. Labels use the achieved face ratio (single
+ * source of truth = compliance engine). When the engine didn't persist exact
+ * crown/chin positions, derive a sensible fallback from the document config.
+ */
+function previewMeta(documentType: Order['document_type'], ratioOverride?: number) {
+  const spec = DOCUMENT_SPECS[documentType];
+  const cfg = getBiometricConfig(spec);
+  const target = cfg.targetRatio;
+  const ratio = ratioOverride ?? target;
+  const isUS = spec.country === 'US';
+  const inch = (mm: number) => mm / 25.4;
+
+  const eyeTarget = targetEyeLineFromTop(cfg);
+  const fallbackTop = Math.max(0, eyeTarget - EYE_FROM_CROWN * target);
+
+  return {
+    aspectRatio: spec.widthPx / spec.heightPx,
+    widthLabel: isUS ? `${inch(spec.widthMm).toFixed(0)} in` : `${spec.widthMm} mm`,
+    heightLabel: isUS ? `${inch(spec.heightMm).toFixed(0)} in` : `${spec.heightMm} mm`,
+    headLabel: isUS ? `${(ratio * inch(spec.heightMm)).toFixed(2)} in` : `${Math.round(ratio * spec.heightMm)} mm`,
+    fallbackTop,
+    fallbackBottom: Math.min(1, fallbackTop + target),
+  };
+}
 
 export default function PhotoReview() {
   const router = useRouter();
@@ -56,42 +86,37 @@ export default function PhotoReview() {
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
-      {/* Photo preview */}
+      {/* Protected preview (watermark + measurement guides; clean image delivered after payment) */}
       <div className="space-y-4">
         {order.photo_processed_url && (
           <div>
             <p className="text-sm font-medium text-gray-500 mb-2 uppercase tracking-wide">
               Your photo
             </p>
-            <div className="bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center p-4">
-              <Image
-                src={order.photo_processed_url}
-                alt="Processed passport photo"
-                width={300}
-                height={300}
-                unoptimized
-                className="rounded-lg object-contain"
-              />
+            <div className="bg-gray-100 rounded-xl overflow-hidden py-4">
+              {(() => {
+                const m = order.compliance_data?.report?.measurements;
+                const meta = previewMeta(order.document_type, m?.faceRatio);
+                return (
+                  <PassportPreview
+                    imageUrl={`/api/preview/${order.id}`}
+                    aspectRatio={meta.aspectRatio}
+                    widthLabel={meta.widthLabel}
+                    heightLabel={meta.heightLabel}
+                    headLabel={meta.headLabel}
+                    headTopFraction={m?.headTopFraction ?? meta.fallbackTop}
+                    headBottomFraction={m?.headBottomFraction ?? meta.fallbackBottom}
+                  />
+                );
+              })()}
             </div>
-          </div>
-        )}
-        {order.photo_composite_url && (
-          <div>
-            <p className="text-sm font-medium text-gray-500 mb-2 uppercase tracking-wide">
-              Print layout (4×6)
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              Measurement guides are shown here only — your downloaded photo is clean and print-ready.
             </p>
-            <div className="bg-gray-100 rounded-xl overflow-hidden p-4">
-              <Image
-                src={order.photo_composite_url}
-                alt="4×6 print layout"
-                width={400}
-                height={600}
-                unoptimized
-                className="rounded-lg object-contain w-full"
-              />
-            </div>
           </div>
         )}
+        {/* Print layout (4×6) is generated in the backend and delivered after
+            payment — intentionally hidden from this pre-payment preview. */}
       </div>
 
       {/* Compliance & actions */}

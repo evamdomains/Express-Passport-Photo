@@ -82,32 +82,23 @@ export default function OrderConfirmation() {
         <div className="space-y-3 mb-8">
           {order.download_url ? (
             <>
+              {/* Secure app routes — mint fresh signed URLs on click (storage is private). */}
               <a
-                href={order.download_url}
+                href={`/download/pdf/${order.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full bg-brand-600 text-white py-4 rounded-xl font-bold text-base hover:bg-brand-700 transition-colors"
               >
-                ↓ Download Print-Ready PDF
+                ↓ Download Print-Ready PDF (4×6)
               </a>
               {order.photo_processed_url && (
                 <a
-                  href={order.photo_processed_url}
+                  href={`/download/jpeg/${order.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full bg-gray-100 text-gray-700 py-3.5 rounded-xl font-medium hover:bg-gray-200 transition-colors"
                 >
                   ↓ Download JPEG
-                </a>
-              )}
-              {order.photo_composite_url && (
-                <a
-                  href={order.photo_composite_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-gray-100 text-gray-700 py-3.5 rounded-xl font-medium hover:bg-gray-200 transition-colors"
-                >
-                  ↓ Download 4×6 Print Layout
                 </a>
               )}
             </>

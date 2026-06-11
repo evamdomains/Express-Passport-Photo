@@ -1,10 +1,60 @@
 'use client';
 
-import { useState, useCallback, useEffect, Suspense } from 'react';
+import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DocumentTypeSelector from './DocumentTypeSelector';
+import CompliancePanel from './CompliancePanel';
 import type { DocumentTypeId } from '@/types/document';
-import type { ComplianceResult } from '@/types/order';
+import type { BiometricData } from '@/types/biometric';
+import { DOCUMENT_SPECS } from '@/constants/document-specs';
+import { getBiometricConfig } from '@/lib/face/biometric-config';
+import { buildGateChecks, gateStepLabels, type GateCheck } from '@/lib/face/compliance-gate';
+import { objectDetectionEnabled } from '@/lib/face/object-detection-config';
+import { evaluateBabyObjects, type BabyObjectsResult, type Box } from '@/lib/face/baby-objects';
+
+/** Approximate face bounding box (normalized) from the biometric, for object-overlap checks. */
+function faceBoxFromBio(bio: BiometricData): Box {
+  const W = bio.imageWidth || 1;
+  const H = bio.imageHeight || 1;
+  const chinYNorm = bio.chinY / H;
+  const top = Math.max(0, chinYNorm - bio.faceHeightNorm);
+  const widthNorm = Math.min(1, bio.faceWidth / W);
+  const left = Math.max(0, bio.faceCenterXNorm - widthNorm / 2);
+  return { x: left, y: top, width: widthNorm, height: Math.min(1 - top, bio.faceHeightNorm) };
+}
+
+/**
+ * Baby-only object detection (MediaPipe ObjectDetector). Best-effort: any
+ * failure returns undefined so the gate still runs without it.
+ */
+async function detectBabyObjects(file: File, bio: BiometricData): Promise<BabyObjectsResult | undefined> {
+  try {
+    const { detectBabyObjectsFromFile } = await import('@/lib/face/BabyObjectDetector');
+    const detections = await detectBabyObjectsFromFile(file);
+    return evaluateBabyObjects(detections, faceBoxFromBio(bio));
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Run MediaPipe biometric measurement in the browser. Returns the raw
+ * BiometricData (chin / eyes / face-centre / pose / mouth / teeth). `error` is
+ * true only when MediaPipe itself couldn't run (model/decode failure) — a
+ * detected-no-face is returned as a normal biometric with faceDetected:false.
+ */
+async function measureFace(
+  file: File,
+  docType: DocumentTypeId,
+): Promise<{ bio?: BiometricData; error?: boolean }> {
+  try {
+    const cfg = getBiometricConfig(DOCUMENT_SPECS[docType]);
+    const { analyzeImageFile } = await import('@/lib/face/FaceAnalysisService');
+    return { bio: await analyzeImageFile(file, cfg) };
+  } catch {
+    return { error: true };
+  }
+}
 
 type Step = 'select-type' | 'upload';
 
@@ -16,14 +66,6 @@ const PROCESSING_STEPS = [
   { label: 'Analyzing face & compliance…', pct: 70 },
   { label: 'Generating print-ready files…', pct: 95 },
 ];
-
-function getComplianceBlocker(compliance: ComplianceResult): string | null {
-  if (!compliance.faceDetected) return 'No face detected. Use a clear, front-facing photo in good light.';
-  if (compliance.faceCount > 1) return 'Multiple faces detected. Only one person should be in the photo.';
-  const extreme = compliance.issues.find((i) => i.toLowerCase().includes('looking directly'));
-  if (extreme) return extreme;
-  return null;
-}
 
 function ProcessingOverlay() {
   const [stepIndex, setStepIndex] = useState(0);
@@ -106,8 +148,13 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
   const [docType, setDocType] = useState<DocumentTypeId | null>(initialDocType);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  // idle = upload UI · gate = compliance panel · generating = server fallback overlay
+  const [phase, setPhase] = useState<'idle' | 'gate' | 'generating'>('idle');
+  const [gateChecks, setGateChecks] = useState<GateCheck[] | null>(null);
+  const [serverRunning, setServerRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const bioRef = useRef<BiometricData | null>(null);
+  const babyObjectsRef = useRef<BabyObjectsResult | null>(null);
 
   const setFileWithValidation = useCallback((f: File) => {
     if (!ALLOWED_TYPES.includes(f.type.toLowerCase())) {
@@ -140,11 +187,13 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
     [setFileWithValidation]
   );
 
-  const handleSubmit = async () => {
+  /**
+   * Generate the passport photo. Called ONLY after the compliance gate passes
+   * (or as a fallback when MediaPipe couldn't run) — this is the only path that
+   * reaches /api/process-photo, so PhotoRoom never sees a non-compliant image.
+   */
+  const runServer = async () => {
     if (!file || !docType) return;
-    setUploading(true);
-    setError(null);
-
     try {
       const orderRes = await fetch('/api/orders', {
         method: 'POST',
@@ -158,30 +207,98 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
       form.append('photo', file);
       form.append('documentTypeId', docType);
       form.append('orderId', orderId);
+      if (bioRef.current) form.append('biometric', JSON.stringify(bioRef.current));
+      // Send the baby-object result so the server can re-enforce Stage 1 (the
+      // server has no ObjectDetector of its own).
+      if (babyObjectsRef.current) form.append('babyObjects', JSON.stringify(babyObjectsRef.current));
 
       const processRes = await fetch('/api/process-photo', { method: 'POST', body: form });
-      const processData = (await processRes.json()) as {
-        error?: string;
-        compliance?: ComplianceResult;
-      };
-
-      if (!processRes.ok) throw new Error(processData.error ?? 'Processing failed');
-
-      if (processData.compliance) {
-        const blocker = getComplianceBlocker(processData.compliance);
-        if (blocker) throw new Error(blocker);
-      }
+      const data = (await processRes.json()) as { error?: string };
+      if (!processRes.ok) throw new Error(data.error ?? 'Processing failed');
 
       router.push(`/editor?orderId=${orderId}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
-      setUploading(false);
+      setPhase('idle');
+      setServerRunning(false);
+      setGateChecks(null);
     }
+  };
+
+  // Step 1: run the compliance gate (MediaPipe) BEFORE any PhotoRoom call.
+  const handleProcess = async () => {
+    if (!file || !docType) return;
+    setError(null);
+    setServerRunning(false);
+    setGateChecks(null);
+    setPhase('gate'); // shows "Analyzing…" until the checks are ready
+
+    const { bio, error: mpError } = await measureFace(file, docType);
+    bioRef.current = bio ?? null;
+
+    if (mpError || !bio) {
+      // MediaPipe couldn't run → fall back to the server pipeline (which keeps
+      // its own no-face / multiple-face safety net). App stays usable.
+      setPhase('generating');
+      await runServer();
+      return;
+    }
+
+    // Baby passport only: run the object-detection stage (after face, before
+    // final evaluation). Skipped entirely for all other document types.
+    const babyObjects =
+      objectDetectionEnabled(docType) && bio.faceDetected ? await detectBabyObjects(file, bio) : undefined;
+    babyObjectsRef.current = babyObjects ?? null;
+
+    setGateChecks(buildGateChecks(bio, DOCUMENT_SPECS[docType], babyObjects).checks);
+  };
+
+  // Step 2: the panel finished revealing every check.
+  const handleGateResolved = (passed: boolean) => {
+    if (passed) {
+      setServerRunning(true);
+      runServer(); // PhotoRoom + passport generation
+    }
+    // on failure the panel shows the reason + "Upload a new image" (handleRetry)
+  };
+
+  const handleRetry = () => {
+    setPhase('idle');
+    setGateChecks(null);
+    setServerRunning(false);
+    setError(null);
+    setFile(null);
+    setPreview(null);
+    bioRef.current = null;
+    babyObjectsRef.current = null;
   };
 
   const resetFile = () => { setFile(null); setPreview(null); setError(null); };
 
-  if (uploading) {
+  // Compliance gate: analyzing spinner until checks are ready, then the panel.
+  if (phase === 'gate') {
+    if (!gateChecks) {
+      return (
+        <div className="py-10 text-center">
+          <div className="text-4xl mb-3 animate-pulse">🔍</div>
+          <p className="font-semibold text-gray-800 text-lg">Analyzing your photo…</p>
+          <p className="text-sm text-gray-400 mt-1">Detecting your face and checking compliance</p>
+        </div>
+      );
+    }
+    return (
+      <CompliancePanel
+        checks={gateChecks}
+        stepLabels={docType ? gateStepLabels(DOCUMENT_SPECS[docType]) : undefined}
+        generating={serverRunning}
+        onResolved={handleGateResolved}
+        onRetry={handleRetry}
+      />
+    );
+  }
+
+  // Fallback (MediaPipe unavailable): the original server-processing overlay.
+  if (phase === 'generating') {
     return <ProcessingOverlay />;
   }
 
@@ -253,7 +370,7 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
 
           <button
             disabled={!file || !!error}
-            onClick={handleSubmit}
+            onClick={handleProcess}
             className="w-full bg-brand-600 disabled:bg-gray-200 disabled:text-gray-400 text-white py-4 rounded-xl font-bold text-base transition-colors hover:bg-brand-700"
           >
             Process My Photo →

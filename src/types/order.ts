@@ -1,4 +1,5 @@
 import type { DocumentTypeId } from './document';
+import type { ComplianceReport } from './biometric';
 
 export type ProductSku = 'digital_download' | 'printed_ready';
 
@@ -42,6 +43,10 @@ export interface ComplianceResult {
   facingForward: boolean | null;
   issues: string[];
   warnings: string[];
+  /** Rich per-axis biometric report (present when measured by MediaPipe). */
+  report?: ComplianceReport;
+  /** Which engine produced this result. */
+  source?: 'mediapipe' | 'rekognition';
 }
 
 export interface ProductOption {

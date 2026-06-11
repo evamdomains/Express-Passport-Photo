@@ -74,14 +74,18 @@ export async function analyzeFace(
     issues.push('Multiple faces detected — only one person allowed');
   }
 
+  // Face size is AUTO-CORRECTED by the target-ratio scaler before this runs
+  // (Rekognition sees the already-scaled photo). It must NEVER hard-fail on the
+  // ratio range — that would reject a photo the scaler already fixed. Surface a
+  // size deviation only as an advisory warning.
   const headHeightPercent = bb?.Height != null ? bb.Height * 100 : null;
   if (headHeightPercent !== null) {
     const minPct = spec.headHeightMin * 100;
     const maxPct = spec.headHeightMax * 100;
     if (headHeightPercent < minPct) {
-      issues.push(`Face too small (${headHeightPercent.toFixed(0)}% of frame, minimum ${minPct}%)`);
+      warnings.push(`Face appears small (${headHeightPercent.toFixed(0)}% of frame); auto-scaling targets ${minPct}–${maxPct}%.`);
     } else if (headHeightPercent > maxPct) {
-      issues.push(`Face too large (${headHeightPercent.toFixed(0)}% of frame, maximum ${maxPct}%)`);
+      warnings.push(`Face appears large (${headHeightPercent.toFixed(0)}% of frame); auto-scaling targets ${minPct}–${maxPct}%.`);
     }
   }
 
