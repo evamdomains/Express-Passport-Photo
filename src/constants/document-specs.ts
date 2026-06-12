@@ -43,7 +43,7 @@ export const DOCUMENT_SPECS: Record<DocumentTypeId, DocumentSpec> = {
     dpi: 300,
     backgroundHex: '#FFFFFF',
     headHeightMin: 0.50,
-    headHeightMax: 0.69,
+    headHeightMax: 0.70,
     faceHeightMinMm: null,
     faceHeightMaxMm: null,
     requirements: [

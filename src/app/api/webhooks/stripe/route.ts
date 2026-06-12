@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createPrintPdf } from '@/lib/sharp-utils';
+import { PHOTOS_BUCKET, storagePaths, downloadObject, createSignedDownloadUrl } from '@/lib/storage';
 import {
   sendDigitalDownloadEmail,
   sendOrderConfirmationEmail,
@@ -104,26 +105,24 @@ export async function POST(req: NextRequest) {
   const spec = DOCUMENT_SPECS[order.document_type as DocumentTypeId];
   const paymentIntentId = session.payment_intent as string;
 
-  // STEP 5 — generate PDF
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expresspassportphoto.com';
+  const paths = storagePaths(orderId);
+
+  // STEP 5 — generate PDF (from the PRIVATE composite; uploaded PRIVATELY)
   let pdfBuffer: Buffer | null = null;
-  let pdfUrl: string | null = null;
+  let pdfReady = false;
 
   if (order.photo_composite_url) {
-    console.log('[webhook:5] fetching composite image for PDF generation');
+    console.log('[webhook:5] downloading composite from private storage for PDF generation');
     try {
-      const compositeRes = await fetch(order.photo_composite_url);
-      if (!compositeRes.ok) {
-        throw new Error(`Composite fetch failed: ${compositeRes.status} ${compositeRes.statusText}`);
-      }
-      console.log('[webhook:5] composite fetched, generating PDF');
-      const compositeBuffer = Buffer.from(await compositeRes.arrayBuffer());
+      const compositeBuffer = await downloadObject(supabase, paths.composite);
+      if (!compositeBuffer) throw new Error('Composite not found in private storage');
       pdfBuffer = await createPrintPdf(compositeBuffer);
-      console.log('[webhook:5] PDF generated, uploading to Supabase storage');
+      console.log('[webhook:5] PDF generated, uploading to private storage');
 
-      const pdfPath = `orders/${orderId}/print.pdf`;
       const { error: uploadError } = await supabase.storage
-        .from('photos')
-        .upload(pdfPath, pdfBuffer, { contentType: 'application/pdf', upsert: true });
+        .from(PHOTOS_BUCKET)
+        .upload(paths.pdf, pdfBuffer, { contentType: 'application/pdf', upsert: true });
 
       if (uploadError) {
         console.error('[webhook:5] PDF upload FAILED', uploadError.message);
@@ -131,17 +130,17 @@ export async function POST(req: NextRequest) {
           api: 'Supabase',
           error: uploadError,
           orderId,
-          context: { operation: 'storage.upload', path: pdfPath },
+          context: { operation: 'storage.upload', path: paths.pdf },
         });
         throw uploadError;
       }
 
-      pdfUrl = supabase.storage.from('photos').getPublicUrl(pdfPath).data.publicUrl;
-      console.log('[webhook:5] PDF uploaded OK', pdfUrl);
+      pdfReady = true;
+      console.log('[webhook:5] PDF uploaded OK (private)');
 
       await supabase
         .from('orders')
-        .update({ pdf_url: pdfUrl, updated_at: new Date().toISOString() })
+        .update({ pdf_url: paths.pdf, updated_at: new Date().toISOString() })
         .eq('id', orderId);
     } catch (err) {
       const isSupabaseError = (err as { code?: string }).code !== undefined;
@@ -150,24 +149,25 @@ export async function POST(req: NextRequest) {
           api: 'Stripe Webhook',
           error: err,
           orderId,
-          context: { operation: 'PDF generation', compositeUrl: order.photo_composite_url },
+          context: { operation: 'PDF generation', compositePath: paths.composite },
         });
       }
       console.error('[webhook:5] PDF generation failed (non-fatal, continuing):', err instanceof Error ? err.message : err);
     }
   } else {
-    console.warn('[webhook:5] skipping PDF — order has no photo_composite_url (photo processing may not have completed)');
+    console.warn('[webhook:5] skipping PDF — order has no composite (photo processing may not have completed)');
   }
 
   // STEP 6 — digital download fulfillment
   if (order.product_sku === 'digital_download') {
-    console.log('[webhook:6] digital_download — updating status to fulfilled, pdfUrl:', pdfUrl ?? 'null (will show "preparing" message)');
+    console.log('[webhook:6] digital_download — updating status to fulfilled, pdfReady:', pdfReady);
 
     const { error: fulfillError } = await supabase
       .from('orders')
       .update({
         status: 'fulfilled',
-        download_url: pdfUrl,
+        // App download route (secure, mints signed URLs on click). Null until PDF ready.
+        download_url: pdfReady ? `${appUrl}/download/pdf/${orderId}` : null,
         stripe_payment_intent_id: paymentIntentId,
         updated_at: new Date().toISOString(),
       })
@@ -185,14 +185,13 @@ export async function POST(req: NextRequest) {
       console.log('[webhook:6] order status set to fulfilled OK');
     }
 
-    if (order.email && pdfUrl && order.photo_processed_url && order.photo_composite_url) {
+    if (order.email && pdfReady && order.photo_processed_url) {
       try {
         await sendDigitalDownloadEmail({
           to: order.email,
           orderId,
-          downloadUrl: pdfUrl,
-          processedUrl: order.photo_processed_url,
-          compositeUrl: order.photo_composite_url,
+          jpegUrl: `${appUrl}/download/jpeg/${orderId}`,
+          pdfUrl: `${appUrl}/download/pdf/${orderId}`,
           documentTypeName: spec.name,
         });
         console.log('[webhook:6] download email sent to', order.email);
@@ -202,9 +201,8 @@ export async function POST(req: NextRequest) {
     } else {
       console.warn('[webhook:6] download email skipped', {
         hasEmail: !!order.email,
-        hasPdfUrl: !!pdfUrl,
-        hasProcessedUrl: !!order.photo_processed_url,
-        hasCompositeUrl: !!order.photo_composite_url,
+        pdfReady,
+        hasProcessed: !!order.photo_processed_url,
       });
     }
 
@@ -252,6 +250,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Admin gets a short-lived signed link to the composite (private bucket).
+  const adminCompositeUrl = order.photo_composite_url
+    ? await createSignedDownloadUrl(supabase, paths.composite, 60 * 60 * 24)
+    : null;
+
   try {
     await sendAdminNewOrderEmail({
       orderId,
@@ -260,7 +263,7 @@ export async function POST(req: NextRequest) {
       storeName: order.store_name ?? 'Unknown store',
       storeAddress: order.store_address ?? 'Unknown address',
       storeMapsUrl: order.store_maps_url ?? '#',
-      photoCompositeUrl: order.photo_composite_url ?? null,
+      photoCompositeUrl: adminCompositeUrl,
       pdfBuffer,
     });
     console.log('[webhook:6] admin email sent to', process.env.ADMIN_EMAIL);
