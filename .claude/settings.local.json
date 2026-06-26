@@ -54,7 +54,8 @@
       "Bash(cd \"d:/Express-passport-photo-main/Express-Passport-Photo\")",
       "Bash(grep -E '^NEXT_PUBLIC_SUPABASE_URL=' .env)",
       "Bash(grep -n \"REVIEWS\\\\|WHAT CUSTOMERS\\\\|actually get approved\\\\|Get my photo — \\\\$0.99\\\\|'use client'\\\\|^import\\\\|^export default\" src/app/page.tsx)",
-      "Bash(rm -f .next/dev/types/routes.d.ts)"
+      "Bash(rm -f .next/dev/types/routes.d.ts)",
+      "Bash(rm -f .next/dev/types/routes.d.ts .next/dev/types/validator.ts)"
     ],
     "additionalDirectories": [
       "D:\\Express-passport-photo-main\\Express-Passport-Photo\\node_modules\\@mediapipe\\tasks-vision\\wasm"

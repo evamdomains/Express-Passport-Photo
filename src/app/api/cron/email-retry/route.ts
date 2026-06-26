@@ -18,7 +18,9 @@ function isAuthorized(req: NextRequest): boolean {
 }
 
 /**
- * Delivery-email retry worker — runs every 5 minutes (see vercel.json).
+ * Delivery-email retry worker — triggered every 5 minutes by the Supabase
+ * Scheduler (pg_cron → the `email-retry-scheduler` Edge Function → POST here).
+ * Still callable via GET (manual runs / curl). The retry logic is unchanged.
  *
  * 1. Reclaims crashed SENDING rows (a previous attempt died mid-send) back to
  *    FAILED so they retry.
@@ -26,7 +28,7 @@ function isAuthorized(req: NextRequest): boolean {
  *    handles the exactly-once claim, status transitions, retry-count increment,
  *    and the admin alert when the cap is reached.
  */
-export async function GET(req: NextRequest) {
+async function handleRetry(req: NextRequest) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -80,3 +82,8 @@ export async function GET(req: NextRequest) {
   console.log(`[email-retry] done — retried ${orders.length}, sent ${sent}, still failing ${stillFailing}`);
   return NextResponse.json({ retried: orders.length, sent, stillFailing });
 }
+
+// Supabase Scheduler POSTs here; GET stays for manual runs / Vercel-style calls.
+// Both share the identical handler — only the trigger mechanism changed.
+export const POST = handleRetry;
+export const GET = handleRetry;
