@@ -81,35 +81,30 @@ describe('2. Canadian passport target ratio (47%)', () => {
   });
 });
 
-describe('3. Under-sized faces are auto-corrected, never rejected on ratio', () => {
-  it('auto-scaling lifts an under-sized input back to target', () => {
-    const bio = makeBio({ faceHeightNorm: 0.3 }); // way under min
-    expect(achievedFrom(bio)).toBeCloseTo(0.565, 2);
+describe('3. Final ratio below the official minimum → FAIL (never COMPLIANT)', () => {
+  it('a GENERATED ratio under the official minimum FAILs', () => {
+    const report = evaluate(makeBio(), US, usCfg, 0.4); // < 0.50
+    expect(report.faceRatio.status).toBe('FAIL');
+    expect(report.overall).toBe('NON_COMPLIANT');
+    expect(toComplianceResult(report, makeBio(), usCfg).passed).toBe(false);
   });
 
-  it('an off-target (below-optimal) produced ratio is advisory, never a hard FAIL', () => {
-    // Size is auto-corrected by the scaler; unrecoverable size is caught by the
-    // pre-scale gate, not here. So the ratio axis must never NON_COMPLIANT.
-    const report = evaluate(makeBio(), US, usCfg, 0.4); // below optimal
-    expect(report.faceRatio.status).not.toBe('FAIL');
-    expect(report.faceRatio.status).toBe('WARNING');
-    expect(report.overall).not.toBe('NON_COMPLIANT');
-    expect(toComplianceResult(report, makeBio(), usCfg).passed).toBe(true);
+  it('but auto-scaling lifts an under-sized INPUT to exactly the target', () => {
+    expect(achievedFrom(makeBio({ faceHeightNorm: 0.3 }))).toBeCloseTo(0.565, 2);
   });
 });
 
-describe('4. Over-sized faces are auto-corrected, never rejected on ratio', () => {
-  it('auto-scaling shrinks (and white-pads) an over-sized input back to target', () => {
-    const bio = makeBio({ faceHeightNorm: 0.8 }); // over max
-    const crop = computeCrop(bio, US, usCfg);
-    expect(crop.height).toBeGreaterThan(1); // crop taller than source → white-padded
-    expect(achievedFrom(bio)).toBeCloseTo(0.565, 2);
+describe('4. Final ratio above the official maximum → FAIL (never COMPLIANT)', () => {
+  it('a GENERATED ratio over the official maximum FAILs', () => {
+    const report = evaluate(makeBio(), US, usCfg, 0.75); // > 0.69
+    expect(report.faceRatio.status).toBe('FAIL');
+    expect(report.overall).toBe('NON_COMPLIANT');
   });
 
-  it('an over-max produced ratio is advisory, never a hard FAIL', () => {
-    const report = evaluate(makeBio(), US, usCfg, 0.75); // above optimal
-    expect(report.faceRatio.status).not.toBe('FAIL');
-    expect(report.overall).not.toBe('NON_COMPLIANT');
+  it('but auto-scaling shrinks an over-sized INPUT to exactly the target (background-padded)', () => {
+    const crop = computeCrop(makeBio({ faceHeightNorm: 0.8 }), US, usCfg);
+    expect(crop.height).toBeGreaterThan(1); // crop taller than source → background padded
+    expect(achievedFrom(makeBio({ faceHeightNorm: 0.8 }))).toBeCloseTo(0.565, 2);
   });
 });
 

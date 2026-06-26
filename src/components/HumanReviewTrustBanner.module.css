@@ -1,0 +1,90 @@
+/* Animated frame + effects for the full-width Human-Review HR.png banner.
+   Pairs with HowItWorks.module.css (reused for the morphing gradient bg +
+   floating particles) to match the "Three steps" visual system. */
+
+.floatWrap {
+  position: relative;
+  z-index: 1;
+  animation: hr-float 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.frame {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow:
+    0 24px 70px -24px rgba(99, 102, 241, 0.4),
+    0 10px 28px -14px rgba(0, 0, 0, 0.18);
+  transform-style: preserve-3d;
+  transform: perspective(1200px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.25s ease;
+  animation: hr-frame-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  will-change: transform;
+}
+
+/* animated gradient glow border */
+.frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  padding: 2px;
+  background: linear-gradient(120deg, #6366f1, #3b82f6, #22c55e, #a855f7, #6366f1);
+  background-size: 300% 300%;
+  animation: hr-border-flow 6s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 24px;
+}
+
+/* cursor-follow shine */
+.shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  mix-blend-mode: overlay;
+  background: radial-gradient(
+    440px circle at var(--gx, 50%) var(--gy, 40%),
+    rgba(255, 255, 255, 0.4),
+    transparent 60%
+  );
+}
+
+.frame:hover .shine { opacity: 1; }
+
+@keyframes hr-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes hr-frame-in {
+  from { opacity: 0; transform: perspective(1200px) translateY(40px) scale(0.96); }
+  to { opacity: 1; transform: perspective(1200px) translateY(0) scale(1); }
+}
+
+@keyframes hr-border-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floatWrap { animation: none; }
+  .frame { animation: none; transform: none; }
+  .frame::before { animation: none; }
+  .shine { display: none; }
+}

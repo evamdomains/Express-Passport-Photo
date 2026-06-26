@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import PhotoUploadFlow from '@/components/PhotoUploadFlow';
 import AiPreviewDemo from '@/components/AiPreviewDemo';
+import AutoScrollToStart from '@/components/AutoScrollToStart';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,10 +47,23 @@ const TRUST_SIGNALS = [
   { icon: '🔒', label: 'Photos Deleted Within 48 Hours' },
 ];
 
-export default function UploadPage() {
+export default async function UploadPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ document?: string; type?: string }>;
+}) {
+  const sp = await searchParams;
+  // No document selected yet → show the selection grid (wide); otherwise the upload step.
+  const choosing = !(sp.document ?? sp.type);
   return (
     <>
-      {/* ── SECTION 1 · PREMIUM HERO ─────────────────────────────────────── */}
+      {/* From the homepage CTA (?autoscroll=1): show the hero, then slide down
+          to the document picker after 5s. */}
+      <AutoScrollToStart />
+
+      {/* ── SECTION 1 · PREMIUM HERO (only while choosing — a selected document
+            lands straight on the upload widget) ──────────────────────────── */}
+      {choosing && (
       <section className="relative overflow-hidden bg-gradient-to-b from-white via-brand-50/50 to-white">
         {/* Decorative blurred blobs */}
         <div aria-hidden="true" className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-brand-200/40 blur-3xl" />
@@ -87,19 +101,8 @@ export default function UploadPage() {
               ))}
             </ul>
 
-            {/* Primary CTA */}
-            <a
-              href="#start"
-              className="inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-8 py-4 text-base font-extrabold text-white shadow-xl transition-colors hover:bg-brand-700"
-            >
-              Continue Below
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-            </a>
-
             {/* Secondary text */}
-            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-500">
               <span className="font-semibold text-gray-700">Starting at $0.99</span>
               <span className="text-gray-300">·</span>
               <span>No Account Required</span>
@@ -114,13 +117,18 @@ export default function UploadPage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── SECTION 2 · DOCUMENT SELECTION + UPLOAD ──────────────────────── */}
-      <section id="start" className="scroll-mt-28 max-w-2xl mx-auto px-4 py-12 sm:py-16">
+      <section id="start" className={`scroll-mt-28 mx-auto px-4 py-12 sm:py-16 ${choosing ? 'max-w-6xl' : 'max-w-2xl'}`}>
         <div className="text-center mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Upload your photo</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+            {choosing ? 'Choose your document type' : 'Upload your photo'}
+          </h2>
           <p className="text-gray-500 text-sm sm:text-base">
-            Select your document type, upload a clear selfie, and we&apos;ll handle the rest.
+            {choosing
+              ? 'Select the document you need and upload your photo on the next step.'
+              : "Upload a clear, front-facing selfie and we'll handle the rest."}
           </p>
         </div>
 

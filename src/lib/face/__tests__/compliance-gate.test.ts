@@ -39,69 +39,94 @@ function makeBio(over: Partial<BiometricData> = {}): BiometricData {
 
 const keys = (r: ReturnType<typeof buildGateChecks>) => r.checks.map((c) => c.key);
 const last = (r: ReturnType<typeof buildGateChecks>) => r.checks[r.checks.length - 1];
+const find = (r: ReturnType<typeof buildGateChecks>, key: string) => r.checks.find((c) => c.key === key);
 
-describe('compliance gate — ordering + stop-on-first-fail', () => {
-  it('a fully compliant face passes all six checks in order', () => {
+describe('compliance gate — strict ordering + stop-on-first-fail', () => {
+  it('a fully compliant face passes every check in the canonical order', () => {
     const r = buildGateChecks(makeBio(), US);
     expect(r.passed).toBe(true);
     expect(keys(r)).toEqual(GATE_STEP_LABELS.map((s) => s.key));
     expect(r.checks.every((c) => c.status === 'PASS')).toBe(true);
   });
 
-  it('Step 1 — no face: stops immediately', () => {
+  it('no face: stops immediately', () => {
     const r = buildGateChecks(makeBio({ faceDetected: false, faceCount: 0 }), US);
     expect(r.passed).toBe(false);
     expect(keys(r)).toEqual(['face']);
     expect(last(r).message).toMatch(/no face/i);
   });
 
-  it('Step 2 — multiple faces: stops after Single Face', () => {
+  it('multiple faces: stops after Single Face', () => {
     const r = buildGateChecks(makeBio({ faceCount: 2 }), US);
     expect(keys(r)).toEqual(['face', 'single']);
     expect(last(r).status).toBe('FAIL');
     expect(last(r).message).toMatch(/multiple faces/i);
   });
 
-  it('Step 3 — face too small to recover: stops at Face Size', () => {
+  it('quality stages PASS by default (no metrics) so they never false-reject', () => {
+    const r = buildGateChecks(makeBio(), US);
+    expect(find(r, 'sharpness')?.status).toBe('PASS');
+    expect(find(r, 'quality')?.status).toBe('PASS');
+    expect(find(r, 'eyeVisibility')?.status).toBe('PASS');
+    expect(find(r, 'objects')?.status).toBe('PASS');
+    expect(find(r, 'obstruction')?.status).toBe('PASS');
+  });
+
+  it('blurry photo FAILs at Sharpness (before Face Size / geometry) — no landmark bypass', () => {
+    const r = buildGateChecks(makeBio(), US, {
+      quality: { sharpnessScore: 5, eyeSharpness: 50, contrast: 0.2, edgeDensity: 0.08, faceQualityScore: 0.8, measured: true },
+    });
+    expect(r.passed).toBe(false);
+    expect(last(r).key).toBe('sharpness');
+    expect(last(r).message).toMatch(/blurry/i);
+  });
+
+  it('prohibited object FAILs at Object Detection — for a NON-baby document too', () => {
+    const r = buildGateChecks(makeBio(), US, {
+      objects: { objects: { status: 'FAIL', reason: 'Objects detected in the photo.', items: [] }, obstruction: { status: 'PASS', reason: '' }, detectedObjects: [] },
+    });
+    expect(r.passed).toBe(false);
+    expect(find(r, 'objects')?.status).toBe('FAIL');
+  });
+
+  it('face too small to recover: stops at Face Size', () => {
     const r = buildGateChecks(makeBio({ faceHeightNorm: 0.2, imageHeight: 400 }), US); // huge upscale
-    expect(keys(r)).toEqual(['face', 'single', 'size']);
+    expect(last(r).key).toBe('size');
     expect(last(r).status).toBe('FAIL');
-    expect(last(r).message).toMatch(/too small/i);
+    expect(last(r).message).toMatch(/too small|resolution/i);
   });
 
-  it('Step 3 — normal selfie (small face) PASSES (auto-scaled, not rejected)', () => {
-    const r = buildGateChecks(makeBio({ faceHeightNorm: 0.36 }), US);
-    expect(r.checks.find((c) => c.key === 'size')?.status).toBe('PASS');
+  it('normal selfie (small face) PASSES Face Size (auto-scaled, not rejected)', () => {
+    expect(find(buildGateChecks(makeBio({ faceHeightNorm: 0.36 }), US), 'size')?.status).toBe('PASS');
   });
 
-  it('Step 3 — large face within frame PASSES (auto-scaled down, not rejected)', () => {
-    const r = buildGateChecks(makeBio({ faceHeightNorm: 0.7 }), US);
-    expect(r.checks.find((c) => c.key === 'size')?.status).toBe('PASS');
+  it('large face within frame PASSES Face Size (auto-scaled down)', () => {
+    expect(find(buildGateChecks(makeBio({ faceHeightNorm: 0.7 }), US), 'size')?.status).toBe('PASS');
   });
 
-  it('Step 3 — face filling the whole frame (cut off) FAILs as too large', () => {
+  it('face filling the whole frame (cut off) FAILs as too large', () => {
     const r = buildGateChecks(makeBio({ faceHeightNorm: 0.97 }), US);
-    expect(keys(r)).toEqual(['face', 'single', 'size']);
+    expect(last(r).key).toBe('size');
     expect(last(r).status).toBe('FAIL');
     expect(last(r).message).toMatch(/too large|cut off/i);
   });
 
-  it('Step 4 — eyes closed: stops at Eye Position', () => {
+  it('eyes closed: stops at Eye Position', () => {
     const r = buildGateChecks(makeBio({ eyesOpen: false }), US);
-    expect(keys(r)).toEqual(['face', 'single', 'size', 'eyes']);
+    expect(last(r).key).toBe('eyes');
     expect(last(r).status).toBe('FAIL');
   });
 
-  it('Step 5 — visible teeth: stops at Mouth Position', () => {
+  it('visible teeth: stops at Mouth Position', () => {
     const r = buildGateChecks(makeBio({ teethVisibilityScore: 0.2 }), US);
-    expect(keys(r)).toEqual(['face', 'single', 'size', 'eyes', 'mouth']);
+    expect(last(r).key).toBe('mouth');
     expect(last(r).status).toBe('FAIL');
     expect(last(r).message).toMatch(/teeth/i);
   });
 
-  it('Step 6 — head turned: stops at Head Position', () => {
+  it('head turned: stops at Head Position', () => {
     const r = buildGateChecks(makeBio({ yaw: 25 }), US);
-    expect(keys(r)).toEqual(['face', 'single', 'size', 'eyes', 'mouth', 'head']);
+    expect(last(r).key).toBe('head');
     expect(last(r).status).toBe('FAIL');
     expect(last(r).message).toMatch(/head/i);
   });

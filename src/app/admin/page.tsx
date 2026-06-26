@@ -1,6 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import AdminOrderCard from '@/components/AdminOrderCard';
+import AdminReviewModeration from '@/components/AdminReviewModeration';
 import type { Order } from '@/types/order';
+import type { Review } from '@/types/review';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +17,14 @@ export default async function AdminPage() {
     .order('created_at', { ascending: false });
 
   const orders: Order[] = (ordersRaw ?? []) as Order[];
+
+  const { data: reviewsRaw } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+
+  const pendingReviews: Review[] = (reviewsRaw ?? []) as Review[];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -52,6 +62,17 @@ export default async function AdminPage() {
             ))}
           </div>
         )}
+
+        {/* Review moderation queue */}
+        <div className="mt-14">
+          <h2 className="text-2xl font-bold text-gray-900">Reviews to moderate</h2>
+          <p className="text-sm text-gray-500 mt-1 mb-6">
+            {pendingReviews.length === 0
+              ? 'No reviews awaiting approval'
+              : `${pendingReviews.length} review${pendingReviews.length !== 1 ? 's' : ''} awaiting approval`}
+          </p>
+          <AdminReviewModeration initialPending={pendingReviews} />
+        </div>
       </div>
     </div>
   );

@@ -61,12 +61,22 @@ export default function CompliancePanel({ checks, generating, onResolved, onRetr
   const failure = checks.find((c) => c.status === 'FAIL');
   const warnings = checks.filter((c) => c.status === 'WARNING').map((c) => c.message);
 
+  // On FAILURE we resolve immediately (the parent does nothing on a fail — the
+  // failure reason + retry render below). On PASS we intentionally do NOT
+  // auto-proceed: the customer clicks "Generate Passport Photo" to start
+  // PhotoRoom + generation. That click calls handleGenerate().
   useEffect(() => {
-    if (done && !resolvedRef.current) {
+    if (done && failed && !resolvedRef.current) {
       resolvedRef.current = true;
-      onResolved(passed);
+      onResolved(false);
     }
-  }, [done, passed, onResolved]);
+  }, [done, failed, onResolved]);
+
+  const handleGenerate = () => {
+    if (resolvedRef.current) return;
+    resolvedRef.current = true;
+    onResolved(true);
+  };
 
   return (
     <div className="py-6">
@@ -83,7 +93,7 @@ export default function CompliancePanel({ checks, generating, onResolved, onRetr
             <div className="text-4xl mb-3">{generating ? '⚡' : '✅'}</div>
             <p className="font-semibold text-gray-800 text-lg">Photo approved</p>
             <p className="text-sm text-gray-400 mt-1">
-              {generating ? 'Generating your passport photo…' : 'All checks passed'}
+              {generating ? 'Generating your passport photo…' : 'All checks passed — generate your passport photo below'}
             </p>
           </>
         ) : (
@@ -147,7 +157,22 @@ export default function CompliancePanel({ checks, generating, onResolved, onRetr
         </div>
       )}
 
-      {/* Generating spinner */}
+      {/* Passed: explicit "Generate" button — the customer triggers PhotoRoom. */}
+      {done && passed && !generating && (
+        <div className="mt-6 max-w-sm mx-auto">
+          <button
+            onClick={handleGenerate}
+            className="w-full bg-brand-600 text-white py-3.5 rounded-xl font-bold text-base hover:bg-brand-700 transition-colors"
+          >
+            Generate Passport Photo →
+          </button>
+          <p className="text-center text-xs text-gray-400 mt-3">
+            We&apos;ll remove the background and size your photo to spec.
+          </p>
+        </div>
+      )}
+
+      {/* Generating spinner (after the customer clicks Generate) */}
       {done && passed && generating && (
         <div className="mt-6 flex justify-center">
           <Spinner />

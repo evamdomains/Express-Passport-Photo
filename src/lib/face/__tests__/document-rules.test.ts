@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DOCUMENT_RULES, getBiometricConfig } from '@/lib/face/biometric-config';
-import { computeCrop, evaluate } from '@/lib/face/PassportComplianceEngine';
+import { computeCrop, evaluate, toComplianceResult } from '@/lib/face/PassportComplianceEngine';
 import { DOCUMENT_SPECS } from '@/constants/document-specs';
 import type { BiometricData } from '@/types/biometric';
 import type { DocumentTypeId } from '@/types/document';
@@ -75,9 +75,9 @@ describe('DOCUMENT_RULES — per-document config', () => {
 describe('Face scaling targets each document ratio (before → after)', () => {
   for (const id of DOCS) {
     const target = getBiometricConfig(DOCUMENT_SPECS[id]).targetRatio;
-    it(`${id}: small 0.30 and large 0.80 faces both reach ${target}`, () => {
+    it(`${id}: small 0.30 and large 0.80 INPUT faces both scale to exactly ${target}`, () => {
       expect(achieved(makeBio({ faceHeightNorm: 0.3 }), id)).toBeCloseTo(target, 2); // small → up
-      expect(achieved(makeBio({ faceHeightNorm: 0.8 }), id)).toBeCloseTo(target, 2); // large → down
+      expect(achieved(makeBio({ faceHeightNorm: 0.8 }), id)).toBeCloseTo(target, 2); // large → down (padded)
       const r = evaluate(makeBio({ faceHeightNorm: 0.4 }), DOCUMENT_SPECS[id], getBiometricConfig(DOCUMENT_SPECS[id]), target);
       expect(r.overall).toBe('OPTIMAL');
       expect(r.faceRatioValue).toBeCloseTo(target, 2);
@@ -87,6 +87,33 @@ describe('Face scaling targets each document ratio (before → after)', () => {
   it('reframes excess / insufficient top space to the same target', () => {
     expect(achieved(makeBio({ faceHeightNorm: 0.4, eyeCenterYNorm: 0.25 }), 'us_passport')).toBeCloseTo(0.565, 2);
     expect(achieved(makeBio({ faceHeightNorm: 0.4, eyeCenterYNorm: 0.6 }), 'us_passport')).toBeCloseTo(0.565, 2);
+  });
+});
+
+describe('FINAL generated ratio is validated against the document spec (the 65% bug)', () => {
+  it('Canadian passport: 44/47/51% are accepted; 65% FAILs and is NEVER COMPLIANT', () => {
+    const spec = DOCUMENT_SPECS.canadian_passport;
+    const cfg = getBiometricConfig(spec);
+    for (const ratio of [0.44, 0.47, 0.51]) {
+      const r = evaluate(makeBio(), spec, cfg, ratio);
+      expect(r.faceRatio.status).not.toBe('FAIL');
+      expect(r.overall).not.toBe('NON_COMPLIANT');
+    }
+    // The exact screenshot scenario: a 65% Canadian face must hard-FAIL.
+    const bad = evaluate(makeBio(), spec, cfg, 0.65);
+    expect(bad.faceRatio.status).toBe('FAIL');
+    expect(bad.overall).toBe('NON_COMPLIANT');
+    expect(toComplianceResult(bad, makeBio(), cfg).passed).toBe(false);
+  });
+
+  it('every document: a ratio above its max FAILs', () => {
+    for (const id of DOCS) {
+      const spec = DOCUMENT_SPECS[id];
+      const cfg = getBiometricConfig(spec);
+      const r = evaluate(makeBio(), spec, cfg, cfg.faceRatioMax + 0.05);
+      expect(r.faceRatio.status).toBe('FAIL');
+      expect(r.overall).toBe('NON_COMPLIANT');
+    }
   });
 });
 

@@ -21,9 +21,10 @@ export interface FaceAnalysis {
   compliance: ComplianceResult;
 }
 
+
 export async function analyzeFace(
   imageBuffer: Buffer,
-  spec: DocumentSpec
+  _spec: DocumentSpec // retained for API compatibility; face size is owned by the MediaPipe report
 ): Promise<FaceAnalysis> {
   const command = new DetectFacesCommand({
     Image: { Bytes: imageBuffer },
@@ -74,20 +75,13 @@ export async function analyzeFace(
     issues.push('Multiple faces detected — only one person allowed');
   }
 
-  // Face size is AUTO-CORRECTED by the target-ratio scaler before this runs
-  // (Rekognition sees the already-scaled photo). It must NEVER hard-fail on the
-  // ratio range — that would reject a photo the scaler already fixed. Surface a
-  // size deviation only as an advisory warning.
+  // Rekognition's bounding box is EYEBROW→chin, a DIFFERENT metric than the
+  // passport CROWN→chin ratio that is our single source of truth. Emitting a
+  // size warning from it would contradict the SSOT on the same screen (e.g.
+  // "Face 56% PASS" + "Face appears small 43%"). We keep the raw percentage on
+  // the result for diagnostics only and NEVER raise a size issue/warning here —
+  // face size is owned exclusively by the MediaPipe crown→chin report.
   const headHeightPercent = bb?.Height != null ? bb.Height * 100 : null;
-  if (headHeightPercent !== null) {
-    const minPct = spec.headHeightMin * 100;
-    const maxPct = spec.headHeightMax * 100;
-    if (headHeightPercent < minPct) {
-      warnings.push(`Face appears small (${headHeightPercent.toFixed(0)}% of frame); auto-scaling targets ${minPct}–${maxPct}%.`);
-    } else if (headHeightPercent > maxPct) {
-      warnings.push(`Face appears large (${headHeightPercent.toFixed(0)}% of frame); auto-scaling targets ${minPct}–${maxPct}%.`);
-    }
-  }
 
   const eyesOpen = face.EyesOpen?.Value === true;
   if (!eyesOpen) issues.push('Eyes must be open');

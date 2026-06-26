@@ -5,7 +5,7 @@ import { getBiometricConfig } from '@/lib/face/biometric-config';
 import { DOCUMENT_SPECS } from '@/constants/document-specs';
 import type { DocumentTypeId } from '@/types/document';
 import type { BiometricData } from '@/types/biometric';
-import type { BabyObjectsResult } from '@/lib/face/baby-objects';
+import type { ObjectsAndObstruction, DetectedObjectInfo } from '@/lib/face/object-compliance';
 
 /**
  * Two-stage workflow demonstration. Stage 1 is the FREE pre-compliance gate
@@ -55,11 +55,12 @@ function makeBio(over: Partial<BiometricData> = {}): BiometricData {
   };
 }
 
-const babyFail = (reason: string): BabyObjectsResult => ({
-  status: 'FAIL',
-  reason,
-  items: [],
+const objectsFail = (reason: string, detectedObjects: DetectedObjectInfo[] = []): ObjectsAndObstruction => ({
+  objects: { status: 'FAIL', reason, items: [] },
+  obstruction: { status: 'PASS', reason: '' },
+  detectedObjects,
 });
+const detInfo = (label: string, kind: DetectedObjectInfo['kind'], overlapsFace = false): DetectedObjectInfo => ({ label, kind, confidence: 0.85, overlapsFace });
 
 interface WorkflowLog {
   doc: DocumentTypeId;
@@ -74,12 +75,16 @@ interface WorkflowLog {
 }
 
 /** Run the full two-stage decision for one document + biometric. */
-function runWorkflow(doc: DocumentTypeId, bio: BiometricData, babyObjects?: BabyObjectsResult): WorkflowLog {
+function runWorkflow(
+  doc: DocumentTypeId,
+  bio: BiometricData,
+  extras?: { objects?: ObjectsAndObstruction },
+): WorkflowLog {
   const spec = DOCUMENT_SPECS[doc];
   const cfg = getBiometricConfig(spec);
 
   // STAGE 1 — free pre-compliance gate (no PhotoRoom).
-  const stage1 = buildGateChecks(bio, spec, babyObjects);
+  const stage1 = buildGateChecks(bio, spec, extras);
   const stage1Errors = stage1.checks.filter((c) => c.status === 'FAIL').map((c) => c.message);
 
   const uploadedFaceRatio = bio.faceHeightNorm;
@@ -144,7 +149,7 @@ describe('Two-stage workflow — identical across all five document types', () =
     }
   });
 
-  it('Face TOO LARGE but recoverable (80%, in-frame): scaled DOWN to target, PhotoRoom used', () => {
+  it('Face TOO LARGE but recoverable (80%): scaled DOWN to target (background-padded), PhotoRoom used', () => {
     for (const doc of ALL_DOCS) {
       const r = runWorkflow(doc, makeBio({ faceHeightNorm: 0.8, imageHeight: 2400 }));
       logRow('LARGE-OK', r);
@@ -195,26 +200,26 @@ describe('Two-stage workflow — bad photos are rejected BEFORE PhotoRoom (0 cre
     expect(r.stage1Errors.join(' ')).toMatch(/multiple/i);
   });
 
-  it('BABY with PARENT visible → Stage 1 FAIL (baby objects), PhotoRoom skipped', () => {
-    const r = runWorkflow('baby_passport', makeBio(), babyFail('Another person detected. Remove it and keep the baby alone in the frame.'));
+  it('BABY with PARENT visible → Stage 1 FAIL (extra person), PhotoRoom skipped', () => {
+    const r = runWorkflow('baby_passport', makeBio(), { objects: objectsFail('Another person.', [detInfo('Another person', 'person')]) });
     logRow('BABY-PARENT', r);
     expect(r.stage1Result).toBe('FAIL');
     expect(r.PhotoRoomUsed).toBe(false);
-    expect(r.stage1Errors.join(' ')).toMatch(/person/i);
   });
 
-  it('BABY with PACIFIER → Stage 1 FAIL (baby objects), PhotoRoom skipped', () => {
-    const r = runWorkflow('baby_passport', makeBio(), babyFail('Pacifier detected. Remove it and keep the baby alone in the frame.'));
+  it('BABY with PACIFIER → Stage 1 FAIL (objects), PhotoRoom skipped', () => {
+    const r = runWorkflow('baby_passport', makeBio(), { objects: objectsFail('Pacifier.', [detInfo('Pacifier', 'pacifier')]) });
     logRow('BABY-PACIFIER', r);
     expect(r.stage1Result).toBe('FAIL');
     expect(r.PhotoRoomUsed).toBe(false);
-    expect(r.stage1Errors.join(' ')).toMatch(/pacifier/i);
   });
 
-  it('baby object FAIL does NOT affect non-baby docs (objects check is infant-only)', () => {
-    // Same biometric, US passport: no baby-object gate runs → Stage 1 passes.
-    const r = runWorkflow('us_passport', makeBio(), babyFail('Pacifier detected.'));
-    expect(r.stage1Result).toBe('PASS');
-    expect(r.PhotoRoomUsed).toBe(true);
+  it('OBJECT (e.g. passport/phone) on a NON-baby doc → Stage 1 FAIL for ALL docs, PhotoRoom skipped', () => {
+    for (const doc of ALL_DOCS) {
+      const r = runWorkflow(doc, makeBio(), { objects: objectsFail('Objects detected in the photo.', [detInfo('Book / document', 'document')]) });
+      logRow('OBJECT', r);
+      expect(r.stage1Result).toBe('FAIL');
+      expect(r.PhotoRoomUsed).toBe(false);
+    }
   });
 });

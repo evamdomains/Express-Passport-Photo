@@ -114,14 +114,7 @@ export default function BabyPassportPhotoPage() {
             </h1>
             <p className="text-brand-200 text-base mb-2">2×2 inches · White background · State Department compliant</p>
             <p className="text-brand-300 text-sm mb-8">For infants &amp; children · 600×600px at 300 DPI · Take it at home</p>
-            <Link
-              href="/upload?type=baby_passport"
-              className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
-            >
-              Get My Baby&apos;s Passport Photo — $0.99
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
-            </Link>
-            <div className="flex items-center justify-center gap-4 mt-4 text-xs text-brand-300 flex-wrap">
+            <div className="flex items-center justify-center gap-4 text-xs text-brand-300 flex-wrap">
               <span>✓ No account required</span>
               <span>✓ Money-back guarantee</span>
               <span>✓ Instant download</span>
@@ -160,7 +153,7 @@ export default function BabyPassportPhotoPage() {
 
       {/* Upload widget */}
       <section className="max-w-2xl mx-auto px-4 py-14">
-        <h2 className="text-2xl font-bold text-center mb-8">Upload your baby&apos;s photo</h2>
+        <h2 className="text-2xl font-bold text-center mb-8">Choose your document type</h2>
         <PhotoUploadFlow allowedTypes={['baby_passport']} />
       </section>
 

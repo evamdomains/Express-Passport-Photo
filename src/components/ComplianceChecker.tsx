@@ -71,6 +71,12 @@ export default function ComplianceChecker({ compliance }: Props) {
           <AxisRow label="Eye Position" axis={report.eyeAlignment} />
           <AxisRow label="Mouth" axis={report.mouth} />
           <AxisRow label="Head Position" axis={report.headPosition} />
+          {compliance.exposure && (
+            <AxisRow label="Exposure" axis={{ status: compliance.exposure.status, message: compliance.exposure.reason }} />
+          )}
+          {compliance.blur && (
+            <AxisRow label="Blur Quality" axis={{ status: compliance.blur.status, message: compliance.blur.reason }} />
+          )}
         </div>
 
         {warnings.length > 0 && (

@@ -3,6 +3,9 @@ import Link from 'next/link';
 import Flag from '@/components/Flag';
 import BeforeAfterShowcase from '@/components/BeforeAfterShowcase';
 import HowItWorks from '@/components/HowItWorks';
+import HumanReviewMarketing from '@/components/HumanReviewSections';
+import HomeReviewsMarquee from '@/components/HomeReviewsMarquee';
+import OrderStatusLookup from '@/components/OrderStatusLookup';
 
 export const metadata: Metadata = {
   title: 'Passport Photo Online — $0.99 | ICAO Compliant | 60 Seconds',
@@ -59,34 +62,6 @@ function PassportPhotoExample({ position, label, size }: { position: string; lab
     </div>
   );
 }
-
-const REVIEWS = [
-  {
-    name: 'Sarah M.',
-    location: 'New York',
-    text: 'Got my passport photo done in under 2 minutes. The post office accepted it without any issues. Way easier than driving to CVS.',
-  },
-  {
-    name: 'James T.',
-    location: 'Austin',
-    text: 'Needed photos on a Sunday night. Downloaded, went to Walgreens, printed for $0.35. Perfect experience start to finish.',
-  },
-  {
-    name: 'Priya K.',
-    location: 'Toronto',
-    text: 'Needed a Canadian passport photo and was dreading the process. The AI background removal was spot-on and it was accepted first try.',
-  },
-  {
-    name: 'Michael R.',
-    location: 'Chicago',
-    text: 'Used it for a US visa application. Compliance checker flagged my slight head tilt, I retook it, and it passed. Worth every penny.',
-  },
-  {
-    name: 'Elena D.',
-    location: 'Los Angeles',
-    text: "The CVS pickup option is genuinely convenient. I placed the order on my phone, got an email an hour later, picked up my prints. So easy.",
-  },
-];
 
 const FAQ_ITEMS = [
   {
@@ -177,7 +152,7 @@ export default function HomePage() {
 
             {/* CTA */}
             <Link
-              href="/upload"
+              href="/upload?autoscroll=1"
               className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-8 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
             >
               Get My Passport Photo Now — $0.99
@@ -244,6 +219,12 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Human Expert Review (trust · how-it-works · comparison · social proof) ─ */}
+      <HumanReviewMarketing />
+
+      {/* ── Check your Expert Review status by Order ID ──────────────────────── */}
+      <OrderStatusLookup />
+
       {/* ── Compliance examples ──────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 py-16 sm:py-20">
         <div className="text-center mb-12 sm:mb-14">
@@ -261,23 +242,12 @@ export default function HomePage() {
       </section>
 
       {/* ── Social proof ─────────────────────────────────────────────────── */}
-      <section className="bg-brand-900 text-white py-16 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-brand-200 text-sm font-semibold uppercase tracking-widest mb-2">What Customers Say</p>
-            <h2 className="text-2xl sm:text-3xl font-bold">Passport photos that actually get approved</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {REVIEWS.slice(0, 6).map(({ name, location, text }) => (
-              <div key={name} className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
-                <div className="text-yellow-400 text-sm mb-2">★★★★★</div>
-                <p className="text-brand-100 text-sm leading-relaxed mb-3">"{text}"</p>
-                <p className="text-white font-semibold text-sm">{name}</p>
-                <p className="text-brand-300 text-xs">{location}</p>
-              </div>
-            ))}
-          </div>
+      <section className="bg-brand-900 text-white py-16">
+        <div className="text-center mb-10 px-4">
+          <p className="text-brand-200 text-sm font-semibold uppercase tracking-widest mb-2">What Customers Say</p>
+          <h2 className="text-2xl sm:text-3xl font-bold">Passport photos that actually get approved</h2>
         </div>
+        <HomeReviewsMarquee />
       </section>
 
       {/* ── Why choose us ────────────────────────────────────────────────── */}
@@ -380,18 +350,6 @@ export default function HomePage() {
               </div>
             );
           })()}
-
-          <div className="text-center mt-12">
-            <Link
-              href="/upload"
-              className="inline-flex items-center gap-2 bg-brand-600 text-white font-bold px-8 py-4 rounded-2xl text-base shadow-lg shadow-brand-600/25 hover:bg-brand-700 hover:shadow-xl transition-all"
-            >
-              Get my photo — $0.99
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -471,7 +429,7 @@ export default function HomePage() {
         <h2 className="text-2xl sm:text-3xl font-bold mb-3">Ready to get your passport photo?</h2>
         <p className="text-brand-200 mb-8 text-sm">Takes 60 seconds. ICAO compliant. Money-back guarantee.</p>
         <Link
-          href="/upload"
+          href="/upload?autoscroll=1"
           className="inline-flex items-center gap-2 bg-white text-brand-800 font-extrabold px-10 py-4 rounded-2xl text-lg shadow-xl hover:bg-brand-50 transition-colors"
         >
           Get My Passport Photo Now — $0.99

@@ -52,6 +52,37 @@ export interface BiometricData {
   teethVisibilityScore: number;
 }
 
+/**
+ * Image-quality metrics measured from the actual pixels (NOT from landmarks),
+ * so a blurry/low-quality photo fails even when MediaPipe estimates landmarks.
+ * All sharpness values are variance-of-Laplacian over a face/eye ROI normalized
+ * to a fixed-width crop, so they're resolution-independent.
+ */
+export interface ImageQualityMetrics {
+  /** Variance of Laplacian over the face ROI. Higher = sharper. */
+  sharpnessScore: number;
+  /** Variance of Laplacian over the eye ROIs (min of both eyes). */
+  eyeSharpness: number;
+  /** Luminance std-dev over the face ROI (0..1) — contrast. */
+  contrast: number;
+  /** Fraction of strong-edge pixels in the face ROI (0..1). */
+  edgeDensity: number;
+  /** Composite 0..1 face-quality score (sharpness + contrast + edge blend). */
+  faceQualityScore: number;
+  /** Mean face-ROI luminance, 0..255. (exposure) */
+  meanBrightness?: number;
+  /** Fraction of very-dark face pixels, 0..1. (exposure) */
+  underExposureScore?: number;
+  /** Fraction of blown-highlight face pixels, 0..1. (exposure) */
+  overExposureScore?: number;
+  /** |left−right| mean face luminance, 0..255 — lighting balance. (exposure) */
+  lightingBalanceScore?: number;
+  /** Fraction of deep-shadow face pixels, 0..1. (exposure) */
+  shadowScore?: number;
+  /** True when pixel sampling succeeded; false → metrics unknown (skip, don't fail). */
+  measured: boolean;
+}
+
 /** Normalized crop rectangle. Values may fall outside [0,1] → server pads with white. */
 export interface CropRect {
   left: number;

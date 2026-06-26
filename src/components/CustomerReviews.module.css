@@ -1,0 +1,109 @@
+/* Animated customer-reviews section.
+   - Two marquee rows scrolling in opposite directions (pause on hover).
+   - Entrance fade-up for the heading + rating summary.
+   - Soft hover lift + star shimmer on cards.
+   Honors prefers-reduced-motion. */
+
+.section {
+  position: relative;
+  overflow: hidden;
+}
+
+/* fade the marquee edges so cards slide in/out softly */
+.marqueeMask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
+.row {
+  display: flex;
+  width: max-content;
+  gap: 20px;
+  padding: 8px 10px;
+}
+
+.rowLeft {
+  animation: rev-scroll-left 46s linear infinite;
+}
+.rowRight {
+  animation: rev-scroll-right 52s linear infinite;
+}
+
+/* pause whichever row the pointer is over */
+.section:hover .rowLeft,
+.section:hover .rowRight {
+  animation-play-state: paused;
+}
+
+.card {
+  flex: 0 0 320px;
+  width: 320px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 22px;
+  border: 1px solid #eef2f7;
+  box-shadow: 0 10px 30px -18px rgba(37, 99, 235, 0.25);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  will-change: transform;
+}
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 48px -22px rgba(37, 99, 235, 0.4);
+  border-color: #dbeafe;
+}
+
+.fadeUp {
+  animation: rev-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* subtle shimmer that sweeps across the stars */
+.stars {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+}
+.stars::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.85) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: rev-shimmer 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes rev-scroll-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes rev-scroll-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+@keyframes rev-fade-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes rev-shimmer {
+  0%, 60% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowLeft,
+  .rowRight,
+  .fadeUp,
+  .stars::after {
+    animation: none;
+  }
+  /* without the marquee, let the rows wrap so all reviews stay reachable */
+  .row {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+  }
+  .marqueeMask {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}

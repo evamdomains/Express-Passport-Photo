@@ -4,13 +4,16 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createPrintPdf } from '@/lib/sharp-utils';
 import { PHOTOS_BUCKET, storagePaths, downloadObject, createSignedDownloadUrl } from '@/lib/storage';
 import {
-  sendDigitalDownloadEmail,
   sendOrderConfirmationEmail,
   sendAdminNewOrderEmail,
+  sendReviewRequestEmail,
+  sendReviewSubmittedEmail,
 } from '@/lib/resend';
+import { deliverDigitalEmail } from '@/lib/email-delivery';
 import { sendErrorAlert } from '@/lib/alert';
 import { DOCUMENT_SPECS } from '@/constants/document-specs';
 import type { DocumentTypeId } from '@/types/document';
+import type { Order } from '@/types/order';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,6 +111,69 @@ export async function POST(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expresspassportphoto.com';
   const paths = storagePaths(orderId);
 
+  // ── HUMAN-REVIEW PATH (Approach 2) ───────────────────────────────────────
+  // For human-review orders, payment does NOT trigger generation. Instead the
+  // order enters the review queue: we mark it awaiting_review, email the team a
+  // review request with Approve/Reject links, and email the customer that it's
+  // in review. The photo files are generated later, only when a reviewer
+  // approves (see /api/review/[action]). This stops PhotoRoom credits being
+  // spent before a human signs off.
+  if (order.review_type === 'human') {
+    console.log('[webhook:human] human-review order — entering review queue', orderId);
+
+    const { error: reviewMarkError } = await supabase
+      .from('orders')
+      .update({
+        status: 'processing',
+        review_status: 'awaiting_review',
+        stripe_payment_intent_id: paymentIntentId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', orderId);
+
+    if (reviewMarkError) {
+      console.error('[webhook:human] mark awaiting_review FAILED', reviewMarkError.message);
+      await sendErrorAlert({
+        api: 'Supabase',
+        error: reviewMarkError,
+        orderId,
+        context: { operation: 'orders.update', stage: 'human-mark-awaiting-review' },
+      });
+    }
+
+    // Signed, time-limited link to the uploaded original so the team can see the
+    // photo directly in the email.
+    const reviewPhotoUrl = order.photo_original_url
+      ? await createSignedDownloadUrl(supabase, paths.original, 60 * 60 * 24 * 7)
+      : null;
+
+    try {
+      await sendReviewRequestEmail({
+        orderId,
+        customerName: order.customer_name ?? null,
+        customerEmail: order.email ?? 'unknown',
+        customerPhone: order.customer_phone ?? null,
+        documentTypeName: spec.name,
+        photoUrl: reviewPhotoUrl,
+      });
+      console.log('[webhook:human] review-request email sent to team');
+    } catch (err) {
+      console.error('[webhook:human] review-request email FAILED:', err instanceof Error ? err.message : err);
+    }
+
+    if (order.email) {
+      try {
+        await sendReviewSubmittedEmail({ to: order.email, orderId, documentTypeName: spec.name });
+        console.log('[webhook:human] in-review email sent to customer');
+      } catch (err) {
+        console.error('[webhook:human] in-review email FAILED:', err instanceof Error ? err.message : err);
+      }
+    }
+
+    console.log('[webhook:human] human-review queue setup complete');
+    return NextResponse.json({ ok: true });
+  }
+
   // STEP 5 — generate PDF (from the PRIVATE composite; uploaded PRIVATELY)
   let pdfBuffer: Buffer | null = null;
   let pdfReady = false;
@@ -138,10 +204,22 @@ export async function POST(req: NextRequest) {
       pdfReady = true;
       console.log('[webhook:5] PDF uploaded OK (private)');
 
-      await supabase
+      const { error: pdfUrlError } = await supabase
         .from('orders')
         .update({ pdf_url: paths.pdf, updated_at: new Date().toISOString() })
         .eq('id', orderId);
+
+      if (pdfUrlError) {
+        // Don't swallow this — a failure here (e.g. a missing pdf_url column)
+        // leaves the download route unable to serve a paid order.
+        console.error('[webhook:5] pdf_url update FAILED', pdfUrlError.message, pdfUrlError.code);
+        await sendErrorAlert({
+          api: 'Supabase',
+          error: pdfUrlError,
+          orderId,
+          context: { operation: 'orders.update', stage: 'set-pdf-url' },
+        });
+      }
     } catch (err) {
       const isSupabaseError = (err as { code?: string }).code !== undefined;
       if (!isSupabaseError) {
@@ -185,25 +263,15 @@ export async function POST(req: NextRequest) {
       console.log('[webhook:6] order status set to fulfilled OK');
     }
 
-    if (order.email && pdfReady && order.photo_processed_url) {
-      try {
-        await sendDigitalDownloadEmail({
-          to: order.email,
-          orderId,
-          jpegUrl: `${appUrl}/download/jpeg/${orderId}`,
-          pdfUrl: `${appUrl}/download/pdf/${orderId}`,
-          documentTypeName: spec.name,
-        });
-        console.log('[webhook:6] download email sent to', order.email);
-      } catch (err) {
-        console.error('[webhook:6] download email FAILED (check Resend domain verification):', err instanceof Error ? err.message : err);
-      }
+    // Email the customer their files AS ATTACHMENTS (JPEG + print PDF). Reliable
+    // + idempotent: deliverDigitalEmail tracks email_status and is exactly-once,
+    // so duplicate webhook executions never double-send. On failure the retry
+    // worker (/api/cron/email-retry) takes over. Reuses the STEP-5 pdfBuffer.
+    if (order.email) {
+      console.log('[webhook:6] delivery email queued', { orderId });
+      await deliverDigitalEmail(supabase, order as Order, { pdfBuffer });
     } else {
-      console.warn('[webhook:6] download email skipped', {
-        hasEmail: !!order.email,
-        pdfReady,
-        hasProcessed: !!order.photo_processed_url,
-      });
+      console.warn('[webhook:6] delivery email skipped — no customer email', { orderId });
     }
 
     console.log('[webhook:7] digital_download processing complete');

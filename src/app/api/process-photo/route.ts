@@ -9,11 +9,13 @@ import { DOCUMENT_SPECS } from '@/constants/document-specs';
 import { getBiometricConfig } from '@/lib/face/biometric-config';
 import { computeCrop, evaluate, toComplianceResult } from '@/lib/face/PassportComplianceEngine';
 import { buildGateChecks } from '@/lib/face/compliance-gate';
-import type { BabyObjectsResult } from '@/lib/face/baby-objects';
+import type { ObjectsAndObstruction } from '@/lib/face/object-compliance';
+import { analyzeExposure } from '@/lib/exposure-analysis';
+import { analyzeBlur } from '@/lib/blur-analysis';
 import { sendErrorAlert } from '@/lib/alert';
 import type { DocumentTypeId } from '@/types/document';
-import type { CropRect, BiometricData } from '@/types/biometric';
-import type { ComplianceResult } from '@/types/order';
+import type { CropRect, BiometricData, ImageQualityMetrics } from '@/types/biometric';
+import type { ComplianceResult, ExposureAnalysis, BlurAnalysis } from '@/types/order';
 
 export const maxDuration = 60;
 
@@ -60,16 +62,26 @@ export async function POST(req: NextRequest) {
     // biometric → the legacy resize + Rekognition fallback (the only path that
     // can reach PhotoRoom without a Stage-1 gate; happens only on MP failure).
     let biometric: BiometricData | undefined;
-    let babyObjects: BabyObjectsResult | undefined;
+    let quality: ImageQualityMetrics | undefined;
+    let objects: ObjectsAndObstruction | undefined;
+    let objectSharpness: number | undefined;
     let fallbackCrop: CropRect | undefined;
     try {
       const bioRaw = formData.get('biometric');
       if (typeof bioRaw === 'string') biometric = JSON.parse(bioRaw) as BiometricData;
     } catch { /* ignore malformed biometric → fallback */ }
     try {
-      const objRaw = formData.get('babyObjects');
-      if (typeof objRaw === 'string') babyObjects = JSON.parse(objRaw) as BabyObjectsResult;
-    } catch { /* ignore malformed baby-object result */ }
+      const qRaw = formData.get('quality');
+      if (typeof qRaw === 'string') quality = JSON.parse(qRaw) as ImageQualityMetrics;
+    } catch { /* ignore malformed quality metrics */ }
+    try {
+      const objRaw = formData.get('objects');
+      if (typeof objRaw === 'string') objects = JSON.parse(objRaw) as ObjectsAndObstruction;
+    } catch { /* ignore malformed object-detection result */ }
+    try {
+      const osRaw = formData.get('objectSharpness');
+      if (typeof osRaw === 'string') objectSharpness = Number(osRaw);
+    } catch { /* ignore */ }
     try {
       const cropRaw = formData.get('crop');
       if (typeof cropRaw === 'string') fallbackCrop = JSON.parse(cropRaw) as CropRect;
@@ -98,12 +110,18 @@ export async function POST(req: NextRequest) {
     // Server-side re-run of the browser gate, so a direct API call can't spend a
     // PhotoRoom credit on a photo that has no chance of becoming compliant.
     if (biometric) {
-      const stage1 = buildGateChecks(biometric, spec, babyObjects);
+      const stage1 = buildGateChecks(biometric, spec, { quality, objects, objectSharpness });
       if (!stage1.passed) {
         const errors = stage1.checks.filter((c) => c.status === 'FAIL').map((c) => c.message);
         console.log('[process-photo] STAGE 1 REJECTED', { orderId, documentTypeId, PhotoRoomUsed: false, errors });
         return NextResponse.json(
-          { status: 'REJECTED', stage: 'PRE_COMPLIANCE', errors, error: errors[0] ?? 'Photo did not pass pre-compliance.' },
+          {
+            status: 'REJECTED',
+            stage: 'PRE_COMPLIANCE',
+            errors,
+            error: errors[0] ?? 'Photo did not pass pre-compliance.',
+            detectedObjects: objects?.detectedObjects ?? [],
+          },
           { status: 422 },
         );
       }
@@ -129,8 +147,39 @@ export async function POST(req: NextRequest) {
       throw uploadOriginalError;
     }
 
+    // ── Exposure + blur analysis (face region only; after compliance, before
+    // PhotoRoom). Analysis ONLY — read-only compliance checks that do NOT modify
+    // the image; results are stored in compliance_data and shown in the panel.
+    let exposure: ExposureAnalysis | undefined;
+    let blur: BlurAnalysis | undefined;
+    if (biometric?.faceDetected) {
+      exposure = await analyzeExposure(imageBuffer, biometric, biometric.imageWidth, biometric.imageHeight);
+      blur = await analyzeBlur(imageBuffer, biometric, biometric.imageWidth, biometric.imageHeight);
+      console.log('[process-photo] quality-analysis', {
+        orderId, exposure: exposure.status, blur: blur.status, blurScore: blur.blurScore,
+      });
+
+      // Authoritative exposure gate (measured from the real pixels, not the
+      // browser metrics): a FAIL stops here so PhotoRoom is NEVER called on a
+      // badly-lit photo. Applies to every document type.
+      if (exposure.status === 'FAIL') {
+        console.log('[process-photo] EXPOSURE REJECTED (pre-PhotoRoom)', { orderId, reason: exposure.reason });
+        return NextResponse.json(
+          {
+            status: 'REJECTED',
+            stage: 'PRE_COMPLIANCE',
+            errors: [exposure.reason],
+            error: exposure.reason,
+            detectedObjects: objects?.detectedObjects ?? [],
+          },
+          { status: 422 },
+        );
+      }
+    }
+
     // ── STAGE 2 — GENERATION ────────────────────────────────────────────────
-    // The ONLY PhotoRoom call in the pipeline. Reached only on a Stage-1 pass.
+    // The ONLY PhotoRoom call in the pipeline. The user's uploaded image is sent
+    // as-is (no enhancement) — reached only on a Stage-1 pass.
     const transparentPng = await removeBackground(imageBuffer);
 
     // Biometric crop (target-driven face scaling). MediaPipe (browser) measured
@@ -157,6 +206,15 @@ export async function POST(req: NextRequest) {
       // Achieved ratio = (true crown→chin) / crop height → equals target by design.
       achievedRatio = crop.height > 0 ? refined.faceHeightNorm / crop.height : cfg.targetRatio;
       const report = evaluate(refined, spec, cfg, achievedRatio);
+
+      // Clean, non-conflicting note (same crown→chin metric, upload → generated).
+      // Replaces any "face appears small/large" wording so the review page shows
+      // one consistent story.
+      const upPct = Math.round(uploadedFaceRatio * 100);
+      const genPct = Math.round(achievedRatio * 100);
+      if (Math.abs(upPct - genPct) >= 2) {
+        report.warnings.unshift(`Auto-scaled from ${upPct}% to ${genPct}% (document target ${Math.round(cfg.targetRatio * 100)}%).`);
+      }
 
       // Crown/chin position in the FINAL composed image (review overlay SSOT):
       // map the source crown/chin through the exact crop used to scale the face.
@@ -198,14 +256,25 @@ export async function POST(req: NextRequest) {
         }
       }
     }
+    // Single source of truth carries the (read-only) exposure + blur analysis.
+    compliance = { ...compliance, exposure, blur };
 
     // Stage-3 failures → DELETE the candidate assets and create NONE of the
     // deliverables (processed/composite/preview, and later the webhook PDF).
     const stage3Errors: string[] = [];
+    // Explicit guard on the FINAL generated face ratio (single source of truth:
+    // the same `achievedRatio` the report + overlay use). A generated image can
+    // NEVER be COMPLIANT while violating the document sizing spec.
+    const ratioInSpec = achievedRatio >= cfg.faceRatioMin && achievedRatio <= cfg.faceRatioMax;
     if (!faceAnalysis.detected) {
       stage3Errors.push('No face detected in the generated photo.');
     } else if (faceAnalysis.faceCount > 1) {
       stage3Errors.push('Multiple faces detected — only one person allowed.');
+    } else if (!ratioInSpec) {
+      stage3Errors.push(
+        `Generated image violates ${spec.name} sizing rules: face ${Math.round(achievedRatio * 100)}% ` +
+          `of frame (allowed ${Math.round(cfg.faceRatioMin * 100)}–${Math.round(cfg.faceRatioMax * 100)}%).`,
+      );
     } else if (!compliance.passed) {
       stage3Errors.push(...(compliance.issues.length ? compliance.issues : ['Generated photo failed final compliance.']));
     }
@@ -276,7 +345,7 @@ export async function POST(req: NextRequest) {
       scaleFactor: uploadedFaceRatio > 0 ? cfg.targetRatio / uploadedFaceRatio : null, finalRatio: achievedRatio,
     });
 
-    return NextResponse.json({ success: true, compliance });
+    return NextResponse.json({ success: true, compliance, detectedObjects: objects?.detectedObjects ?? [] });
   } catch (err) {
     console.error('[process-photo]', err);
     // PhotoRoom/Rekognition/Supabase already sent their own alerts; catch anything else

@@ -133,7 +133,7 @@ export default function PhotoReview() {
             Continue to Checkout
           </button>
           <a
-            href="/upload"
+            href={`/upload?document=${order.document_type}`}
             className="block text-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             Retake photo

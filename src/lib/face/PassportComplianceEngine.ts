@@ -20,9 +20,16 @@ import { getBiometricConfig, targetFaceRatio, targetEyeLineFromTop } from './bio
 const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
 
 /**
- * Compute the normalized crop rectangle that scales the FACE to the target
- * ratio and seats the eye line at the target height. Result values may fall
- * outside [0,1]; the server pads those areas with white.
+ * Compute the normalized crop rectangle that scales the FACE to EXACTLY the
+ * document target ratio and seats the eye line at the target height.
+ *
+ * The crop always produces the target ratio: `cropHeight = faceHeight / target`.
+ * When the resulting rectangle extends past the source (e.g. a tall crop of a
+ * square/portrait aspect on a narrow PORTRAIT photo), the compositor pads those
+ * areas with the white passport background — the HEAD stays the legally-required
+ * size, which is what matters. We deliberately do NOT zoom-to-fill, because that
+ * would oversize the head above the document's max ratio (the Canadian-65% bug).
+ * Result values may fall outside [0,1]; the server pads with white.
  */
 export function computeCrop(
   bio: BiometricData,
@@ -99,23 +106,24 @@ export function evaluate(
     };
   }
 
-  // ── Face ratio ──
-  // Face size is AUTO-CORRECTED by the target-ratio scaler. `achieved` is the
-  // FINAL post-scale ratio (the scaler aims it exactly at the target), NOT the
-  // uploaded ratio. We therefore NEVER hard-FAIL on the ratio range here:
-  // genuinely unrecoverable size (too small/large to scale) is rejected by the
-  // pre-scale gate. This axis is advisory only — PASS at optimal, else WARNING.
+  // ── Face ratio — validated against the FINAL generated image ──
+  // `achieved` is the post-scale ratio of the GENERATED photo (the server passes
+  // the measured value; without it the scaler's exact target is assumed). The
+  // raw uploaded ratio is NEVER judged here — that recoverable check lives in the
+  // pre-scale gate. But the FINAL ratio MUST obey the document spec: outside the
+  // official range → hard FAIL, so a generated image can never be marked
+  // COMPLIANT while violating the document sizing (e.g. a 65% Canadian face).
   const achieved = achievedRatio ?? target;
   const inOptimal = achieved >= cfg.optimalMin && achieved <= cfg.optimalMax;
   const inOfficial = achieved >= cfg.faceRatioMin && achieved <= cfg.faceRatioMax;
   const faceRatio: AxisResult = {
-    status: inOptimal ? 'PASS' : 'WARNING',
+    status: inOfficial ? 'PASS' : 'FAIL',
     value: round(achieved, 3),
     message: inOptimal
       ? `Optimal face size — ${pct(achieved)} of frame.`
       : inOfficial
         ? `Compliant face size (${pct(achieved)}); optimal is ${optimalRange}.`
-        : `Face auto-scaled to ${pct(achieved)} (optimal ${optimalRange}).`,
+        : `Generated face size ${pct(achieved)} is outside the allowed ${pct(cfg.faceRatioMin)}–${pct(cfg.faceRatioMax)}.`,
   };
   const crop = computeCrop(bio, spec, cfg);
   if (crop.upscale > 2.2) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { storagePaths, createSignedDownloadUrl } from '@/lib/storage';
+import { sendErrorAlert } from '@/lib/alert';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,13 +16,33 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ ord
   if (!orderId) return NextResponse.json({ error: 'Missing orderId' }, { status: 400 });
 
   const supabase = createAdminClient();
-  const { data: order } = await supabase
+  const { data: order, error } = await supabase
     .from('orders')
     .select('id, status, pdf_url')
     .eq('id', orderId)
     .single();
 
-  if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  // PGRST116 = "no rows" (a genuine missing order). Any OTHER error is an
+  // infrastructure/config problem — most often this deployment pointing at a
+  // different Supabase project than the one the order lives in. Surface it
+  // (log + alert + 503) instead of masking it as a misleading 404.
+  if (error && error.code !== 'PGRST116') {
+    console.error('[download/pdf] order lookup failed', { orderId, code: error.code, message: error.message });
+    await sendErrorAlert({
+      api: 'Supabase',
+      error,
+      orderId,
+      context: { operation: 'orders.select', route: 'download/pdf' },
+    });
+    return NextResponse.json({ error: 'Download temporarily unavailable. Please try again shortly.' }, { status: 503 });
+  }
+  if (!order) {
+    console.warn('[download/pdf] order not found in this database', {
+      orderId,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    });
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  }
   if (order.status !== 'paid' && order.status !== 'fulfilled') {
     return NextResponse.json({ error: 'Payment required to download this file.' }, { status: 402 });
   }

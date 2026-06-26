@@ -1,8 +1,10 @@
 'use client';
 
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
-import type { BiometricData, BiometricConfig } from '@/types/biometric';
-import { buildBiometrics, emptyBiometrics, INNER_MOUTH_IDX, type LM } from './landmarks';
+import type { BiometricData, BiometricConfig, ImageQualityMetrics } from '@/types/biometric';
+import { buildBiometrics, emptyBiometrics, INNER_MOUTH_IDX, IDX, type LM } from './landmarks';
+import { computeFaceQualityScore } from './quality-config';
+import { EXPOSURE } from './image-quality';
 import { suppressMediapipeConsoleNoise } from './suppress-mediapipe-logs';
 
 /**
@@ -105,24 +107,182 @@ function teethVisibility(lm: LM[], bitmap: ImageBitmap): number {
   }
 }
 
+// ── Image-quality (sharpness / contrast / edge) measured from PIXELS ─────────
+// These run on the actual image, NOT on landmarks, so a blurry/low-quality photo
+// fails even though MediaPipe still estimates a face.
+
+interface Box { x: number; y: number; width: number; height: number }
+
+/** Draw a normalized ROI of the bitmap, downscaled to ~targetW, as a grayscale buffer. */
+function roiGray(bitmap: ImageBitmap, box: Box, targetW: number): { gray: Float64Array; w: number; h: number } | null {
+  const W = bitmap.width, H = bitmap.height;
+  let sx = Math.floor(Math.max(0, box.x) * W);
+  let sy = Math.floor(Math.max(0, box.y) * H);
+  let sw = Math.ceil(box.width * W);
+  let sh = Math.ceil(box.height * H);
+  sx = Math.min(sx, W - 1); sy = Math.min(sy, H - 1);
+  sw = Math.max(1, Math.min(sw, W - sx)); sh = Math.max(1, Math.min(sh, H - sy));
+  if (sw < 8 || sh < 8) return null;
+
+  const dw = Math.max(8, Math.min(targetW, sw));
+  const dh = Math.max(8, Math.round(dw * (sh / sw)));
+  const canvas = makeCanvas(dw, dh);
+  const ctx = canvas.getContext('2d', { willReadFrequently: true }) as
+    | CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
+  if (!ctx) return null;
+  ctx.drawImage(bitmap as CanvasImageSource, sx, sy, sw, sh, 0, 0, dw, dh);
+  const { data } = ctx.getImageData(0, 0, dw, dh);
+  const gray = new Float64Array(dw * dh);
+  for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+    gray[p] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+  }
+  return { gray, w: dw, h: dh };
+}
+
+const EDGE_MAG = 12; // |Laplacian| above this counts as a strong edge
+
+/** Variance of the Laplacian (sharpness) + strong-edge density over a gray buffer. */
+function laplacianStats(gray: Float64Array, w: number, h: number): { variance: number; edgeDensity: number } {
+  let n = 0, sum = 0, sumSq = 0, strong = 0;
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const lap = 4 * gray[i] - gray[i - 1] - gray[i + 1] - gray[i - w] - gray[i + w];
+      sum += lap; sumSq += lap * lap; n++;
+      if (Math.abs(lap) > EDGE_MAG) strong++;
+    }
+  }
+  if (!n) return { variance: 0, edgeDensity: 0 };
+  const mean = sum / n;
+  return { variance: Math.max(0, sumSq / n - mean * mean), edgeDensity: strong / n };
+}
+
+/** Luminance std-dev (0..1) — contrast. */
+function contrastOf(gray: Float64Array): number {
+  let s = 0, sq = 0;
+  for (const v of gray) { s += v; sq += v * v; }
+  const n = gray.length || 1;
+  const m = s / n;
+  return Math.sqrt(Math.max(0, sq / n - m * m)) / 255;
+}
+
+/** Face-region exposure metrics (mean brightness, under/over, shadows, left↔right
+ *  balance) over the gray ROI. Mirrors the server analyzer so the gate agrees. */
+function exposureOf(gray: Float64Array, w: number, h: number): {
+  meanBrightness: number;
+  underExposureScore: number;
+  overExposureScore: number;
+  shadowScore: number;
+  lightingBalanceScore: number;
+} {
+  const n = gray.length || 1;
+  let sum = 0, dark = 0, bright = 0;
+  for (const v of gray) {
+    sum += v;
+    if (v < EXPOSURE.darkPx) dark++;
+    if (v > EXPOSURE.brightPx) bright++;
+  }
+  const meanBrightness = sum / n;
+  const shadowThresh = Math.max(0, meanBrightness - EXPOSURE.shadowDelta);
+  let shadow = 0;
+  for (const v of gray) if (v < shadowThresh) shadow++;
+
+  // Left ↔ right balance over the two half-width columns of the ROI.
+  const half = Math.floor(w / 2);
+  let lSum = 0, lN = 0, rSum = 0, rN = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const v = gray[y * w + x];
+      if (x < half) { lSum += v; lN++; } else { rSum += v; rN++; }
+    }
+  }
+  const lightingBalanceScore = lN && rN ? Math.abs(lSum / lN - rSum / rN) : 0;
+
+  return {
+    meanBrightness: round(meanBrightness, 1),
+    underExposureScore: round(dark / n, 3),
+    overExposureScore: round(bright / n, 3),
+    shadowScore: round(shadow / n, 3),
+    lightingBalanceScore: round(lightingBalanceScore, 1),
+  };
+}
+
+function eyeBox(inn: LM, out: LM, up: LM, low: LM): Box | null {
+  if (!inn || !out || !up || !low) return null;
+  const left = Math.min(inn.x, out.x), right = Math.max(inn.x, out.x);
+  const top = Math.min(up.y, low.y), bottom = Math.max(up.y, low.y);
+  const padX = (right - left) * 0.25, padY = (bottom - top) * 1.4 + 0.01;
+  return { x: left - padX, y: top - padY, width: (right - left) + 2 * padX, height: (bottom - top) + 2 * padY };
+}
+
+const round = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
+
+/** Measure sharpness/contrast/edge over the face + eye ROIs. */
+function computeImageQuality(lm: LM[], bitmap: ImageBitmap): ImageQualityMetrics {
+  const unknown: ImageQualityMetrics = {
+    sharpnessScore: 0, eyeSharpness: 0, contrast: 0, edgeDensity: 0, faceQualityScore: 0, measured: false,
+  };
+  try {
+    const cheekR = lm[IDX.cheekRight], cheekL = lm[IDX.cheekLeft], fore = lm[IDX.foreheadTop], chin = lm[IDX.chin];
+    if (!cheekR || !cheekL || !fore || !chin) return unknown;
+    const left = Math.min(cheekR.x, cheekL.x), right = Math.max(cheekR.x, cheekL.x);
+    const faceBox: Box = { x: left, y: fore.y, width: right - left, height: chin.y - fore.y };
+
+    const face = roiGray(bitmap, faceBox, 256);
+    if (!face) return unknown;
+    const fl = laplacianStats(face.gray, face.w, face.h);
+    const contrast = contrastOf(face.gray);
+    const sharpnessScore = round(fl.variance, 1);
+    const edgeDensity = round(fl.edgeDensity, 4);
+
+    const eyeVars: number[] = [];
+    const rBox = eyeBox(lm[IDX.rEyeIn], lm[IDX.rEyeOut], lm[IDX.rEyeUp], lm[IDX.rEyeLow]);
+    const lBox = eyeBox(lm[IDX.lEyeIn], lm[IDX.lEyeOut], lm[IDX.lEyeUp], lm[IDX.lEyeLow]);
+    for (const b of [rBox, lBox]) {
+      if (!b) continue;
+      const e = roiGray(bitmap, b, 96);
+      if (e) eyeVars.push(laplacianStats(e.gray, e.w, e.h).variance);
+    }
+    // No usable eye ROI → fall back to face sharpness (don't fabricate a failure).
+    const eyeSharpness = eyeVars.length ? round(Math.min(...eyeVars), 1) : sharpnessScore;
+
+    const faceQualityScore = computeFaceQualityScore({ sharpnessScore, contrast, edgeDensity });
+    const exposure = exposureOf(face.gray, face.w, face.h);
+    return {
+      sharpnessScore,
+      eyeSharpness,
+      contrast: round(contrast, 4),
+      edgeDensity,
+      faceQualityScore,
+      ...exposure,
+      measured: true,
+    };
+  } catch {
+    return unknown;
+  }
+}
+
 /**
- * Analyse an uploaded image file and return biometric measurements.
- * Throws if the image cannot be decoded; returns `faceDetected:false` if the
- * model runs but finds no face.
+ * Analyse an uploaded image file: returns biometric measurements AND pixel-based
+ * image-quality metrics from a single decode + detect pass. Throws if the image
+ * cannot be decoded; returns `faceDetected:false` if the model finds no face.
  */
-export async function analyzeImageFile(file: File, cfg: BiometricConfig): Promise<BiometricData> {
+export async function analyzeImageFile(
+  file: File,
+  cfg: BiometricConfig,
+): Promise<{ bio: BiometricData; quality?: ImageQualityMetrics }> {
   const bitmap = await createImageBitmap(file);
   try {
     const landmarker = await getLandmarker();
     const result = landmarker.detect(bitmap);
     const faces = result.faceLandmarks ?? [];
     if (faces.length === 0) {
-      return emptyBiometrics(bitmap.width, bitmap.height);
+      return { bio: emptyBiometrics(bitmap.width, bitmap.height) };
     }
     const categories = result.faceBlendshapes?.[0]?.categories;
     const matrixData = result.facialTransformationMatrixes?.[0]?.data;
     const teeth = teethVisibility(faces[0], bitmap);
-    return buildBiometrics(
+    const bio = buildBiometrics(
       faces[0],
       categories,
       matrixData ? Array.from(matrixData) : undefined,
@@ -132,6 +292,8 @@ export async function analyzeImageFile(file: File, cfg: BiometricConfig): Promis
       cfg,
       teeth,
     );
+    const quality = computeImageQuality(faces[0], bitmap);
+    return { bio, quality };
   } finally {
     bitmap.close?.();
   }

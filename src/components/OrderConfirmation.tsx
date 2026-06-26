@@ -96,7 +96,7 @@ export default function OrderConfirmation() {
                   href={`/download/jpeg/${order.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full bg-gray-100 text-gray-700 py-3.5 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                  className="flex items-center justify-center gap-2 w-full bg-brand-50 text-brand-700 py-3.5 rounded-xl font-medium hover:bg-brand-100 transition-colors"
                 >
                   ↓ Download JPEG
                 </a>
@@ -172,17 +172,6 @@ export default function OrderConfirmation() {
         )}
       </div>
 
-      {isDigital && (
-        <div className="border border-gray-200 rounded-xl p-5 text-center">
-          <p className="font-medium text-sm mb-1">Want to print at a store?</p>
-          <p className="text-xs text-gray-500 mb-3">
-            Take the 4×6 PDF to any CVS or Walgreens and request a standard 4×6 print.
-          </p>
-          <Link href="/store-locator" className="text-brand-600 hover:underline font-medium text-sm">
-            Find a store near me →
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

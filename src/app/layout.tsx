@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import Script from 'next/script';
 import { Inter } from 'next/font/google';
 import TrustBar from '@/components/TrustBar';
 import StickyMobileCTA from '@/components/StickyMobileCTA';
@@ -142,6 +143,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <p className="text-sm font-extrabold text-gray-900 uppercase tracking-wider mb-4">Company</p>
                 <ul className="space-y-2.5 text-sm text-gray-500">
                   <li><a href="/" className="hover:text-brand-600 transition-colors">Home</a></li>
+                  <li><a href="/about" className="hover:text-brand-600 transition-colors">About Us</a></li>
+                  <li><a href="/reviews" className="hover:text-brand-600 transition-colors">Reviews</a></li>
+                  <li><a href="/contact" className="hover:text-brand-600 transition-colors">Contact Us</a></li>
                   <li><a href="/store-locator" className="hover:text-brand-600 transition-colors">Find a Store</a></li>
                   <li><a href="/refund-policy" className="hover:text-brand-600 transition-colors">Refund Policy</a></li>
                   <li><a href="/privacy-policy" className="hover:text-brand-600 transition-colors">Privacy Policy</a></li>
@@ -181,6 +185,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </footer>
 
         <StickyMobileCTA />
+
+        {/* HubSpot live chat — loads only when the portal ID is configured, so it
+            stays inert until you set NEXT_PUBLIC_HUBSPOT_PORTAL_ID. The widget
+            is used both as a trust/enquiry chat and as the channel our review
+            team uses to confirm pass/fail on human-review orders. */}
+        {process.env.NEXT_PUBLIC_HUBSPOT_PORTAL_ID && (
+          <Script
+            id="hs-script-loader"
+            strategy="afterInteractive"
+            src={`//js.hs-scripts.com/${process.env.NEXT_PUBLIC_HUBSPOT_PORTAL_ID}.js`}
+          />
+        )}
       </body>
     </html>
   );
