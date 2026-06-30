@@ -133,6 +133,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <li><a href="/us-passport-photo" className="hover:text-brand-600 transition-colors">US Passport Photo</a></li>
                   <li><a href="/canada-passport-photo" className="hover:text-brand-600 transition-colors">Canadian Passport Photo</a></li>
                   <li><a href="/baby-passport-photo" className="hover:text-brand-600 transition-colors">Baby Passport Photo</a></li>
+                  <li><a href="/photo-requirements" className="hover:text-brand-600 transition-colors">Photo Requirements</a></li>
                   <li><a href="/upload?type=us_visa" className="hover:text-brand-600 transition-colors">US Visa Photo</a></li>
                   <li><a href="/upload?type=canadian_pr_card" className="hover:text-brand-600 transition-colors">Canadian PR Card Photo</a></li>
                 </ul>

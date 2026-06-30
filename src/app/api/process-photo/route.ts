@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
     let quality: ImageQualityMetrics | undefined;
     let objects: ObjectsAndObstruction | undefined;
     let objectSharpness: number | undefined;
+    let glasses: { detected: boolean; confidence: number } | undefined;
     let fallbackCrop: CropRect | undefined;
     try {
       const bioRaw = formData.get('biometric');
@@ -82,6 +83,10 @@ export async function POST(req: NextRequest) {
       const osRaw = formData.get('objectSharpness');
       if (typeof osRaw === 'string') objectSharpness = Number(osRaw);
     } catch { /* ignore */ }
+    try {
+      const gRaw = formData.get('glasses');
+      if (typeof gRaw === 'string') glasses = JSON.parse(gRaw) as { detected: boolean; confidence: number };
+    } catch { /* ignore malformed glasses verdict */ }
     try {
       const cropRaw = formData.get('crop');
       if (typeof cropRaw === 'string') fallbackCrop = JSON.parse(cropRaw) as CropRect;
@@ -110,7 +115,7 @@ export async function POST(req: NextRequest) {
     // Server-side re-run of the browser gate, so a direct API call can't spend a
     // PhotoRoom credit on a photo that has no chance of becoming compliant.
     if (biometric) {
-      const stage1 = buildGateChecks(biometric, spec, { quality, objects, objectSharpness });
+      const stage1 = buildGateChecks(biometric, spec, { quality, objects, objectSharpness, glasses });
       if (!stage1.passed) {
         const errors = stage1.checks.filter((c) => c.status === 'FAIL').map((c) => c.message);
         console.log('[process-photo] STAGE 1 REJECTED', { orderId, documentTypeId, PhotoRoomUsed: false, errors });

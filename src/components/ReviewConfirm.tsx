@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import PhotoPicker from './PhotoPicker';
 import { DOCUMENT_SPECS } from '@/constants/document-specs';
 import { getBiometricConfig } from '@/lib/face/biometric-config';
 import type { DocumentTypeId } from '@/types/document';
@@ -170,12 +171,8 @@ export default function ReviewConfirm() {
           passport files and move their order to approved automatically.
         </p>
 
-        <div
-          onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setFileWithValidation(f); }}
-          onDragOver={(e) => e.preventDefault()}
-          className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-brand-400 transition-colors"
-        >
-          {preview ? (
+        {preview ? (
+          <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center">
             <div className="space-y-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={preview} alt="Preview" className="max-h-52 mx-auto rounded-lg object-contain" />
@@ -184,24 +181,10 @@ export default function ReviewConfirm() {
                 Use a different photo
               </button>
             </div>
-          ) : (
-            <div>
-              <div className="text-5xl mb-3">📷</div>
-              <p className="font-semibold text-gray-700 mb-1">Drop the approved photo here</p>
-              <p className="text-sm text-gray-400 mb-5">or</p>
-              <label className="cursor-pointer bg-brand-600 text-white px-6 py-3 rounded-xl hover:bg-brand-700 transition-colors font-semibold text-sm">
-                Browse files
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
-                  className="sr-only"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) setFileWithValidation(f); }}
-                />
-              </label>
-              <p className="text-xs text-gray-400 mt-4">JPEG · PNG · WEBP · HEIC · max 10 MB</p>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <PhotoPicker onSelect={setFileWithValidation} />
+        )}
 
         {uploadError && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">

@@ -1,5 +1,5 @@
 import type { DocumentTypeId } from './document';
-import type { ComplianceReport, BiometricData } from './biometric';
+import type { ComplianceReport, BiometricData, AxisResult } from './biometric';
 
 export type ProductSku = 'digital_download' | 'printed_ready';
 
@@ -91,6 +91,16 @@ export interface ComplianceResult {
   exposure?: ExposureAnalysis;
   /** Read-only blur analysis (face region only) — compliance check, does not modify the image. */
   blur?: BlurAnalysis;
+  /** Eyeglasses verdict (measured at upload) — surfaced as a reviewer badge on the human path. */
+  glasses?: AxisResult;
+  /** Baby-passport per-axis verdicts (infant docs only) — shown to human reviewers. */
+  babyCompliance?: {
+    eyes: AxisResult;
+    mouth: AxisResult;
+    expression: AxisResult;
+    headTilt: AxisResult;
+    headRotation: AxisResult;
+  };
   /** MediaPipe biometric measured at upload — reused by the human-review approval
    *  so it scales the face with the SAME computeCrop()/DOCUMENT_RULES as the AI path. */
   biometric?: BiometricData;

@@ -206,6 +206,8 @@ export async function queueHumanReview(supabase: Admin, order: Order): Promise<v
       customerPhone: order.customer_phone ?? null,
       documentTypeName: spec.name,
       photoUrl: reviewPhotoUrl,
+      glassesDetected: order.compliance_data?.glasses?.status === 'FAIL',
+      babyCompliance: order.compliance_data?.babyCompliance,
     });
   } catch (err) {
     console.error('[fulfillment] review-request email FAILED:', err instanceof Error ? err.message : err);

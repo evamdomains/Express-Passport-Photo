@@ -4,11 +4,15 @@ import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DocumentTypeSelector from './DocumentTypeSelector';
 import CompliancePanel from './CompliancePanel';
+import PhotoPicker from './PhotoPicker';
 import type { DocumentTypeId } from '@/types/document';
 import type { BiometricData, ImageQualityMetrics } from '@/types/biometric';
 import { DOCUMENT_SPECS } from '@/constants/document-specs';
 import { getBiometricConfig } from '@/lib/face/biometric-config';
 import { buildGateChecks, gateStepLabels, type GateCheck } from '@/lib/face/compliance-gate';
+import { GLASSES_FAIL_MESSAGE } from '@/lib/face/image-quality';
+import { detectGlassesFromFile, type GlassesResult } from '@/lib/face/GlassesDetector';
+import { evaluateBabyCompliance } from '@/lib/face/baby-compliance';
 import { evaluateObjects, type ObjectsAndObstruction, type Box } from '@/lib/face/object-compliance';
 
 /** Approximate face bounding box (normalized) from the biometric, for object-overlap checks. */
@@ -169,6 +173,7 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
   const qualityRef = useRef<ImageQualityMetrics | null>(null);
   const objectsRef = useRef<ObjectsAndObstruction | null>(null);
   const objectSharpnessRef = useRef<number | null>(null);
+  const glassesRef = useRef<GlassesResult | null>(null);
 
   // Keep the step in sync with the URL. Clicking a document card navigates to
   // ?document=<id> (same route, no remount), which flips this flow to the
@@ -197,22 +202,8 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
     setPreview(URL.createObjectURL(f));
   }, []);
 
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const f = e.target.files?.[0];
-      if (f) setFileWithValidation(f);
-    },
-    [setFileWithValidation]
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const f = e.dataTransfer.files[0];
-      if (f) setFileWithValidation(f);
-    },
-    [setFileWithValidation]
-  );
+  // Drag-drop / browse / live-selfie all funnel through <PhotoPicker> →
+  // setFileWithValidation, so the acquisition method is irrelevant downstream.
 
   /**
    * Generate the passport photo. Called ONLY after the compliance gate passes
@@ -240,6 +231,8 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
       if (qualityRef.current) form.append('quality', JSON.stringify(qualityRef.current));
       if (objectsRef.current) form.append('objects', JSON.stringify(objectsRef.current));
       if (objectSharpnessRef.current != null) form.append('objectSharpness', String(objectSharpnessRef.current));
+      // AI glasses verdict — so the server re-enforces it before PhotoRoom.
+      if (glassesRef.current) form.append('glasses', JSON.stringify(glassesRef.current));
 
       const processRes = await fetch('/api/process-photo', { method: 'POST', body: form });
       const data = (await processRes.json()) as { error?: string };
@@ -299,6 +292,20 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
       form.append('photo', file);
       form.append('orderId', orderId);
       if (bio) form.append('biometric', JSON.stringify(bio));
+      // Baby-passport per-axis verdicts for the reviewer (infant docs only).
+      if (bio && getBiometricConfig(DOCUMENT_SPECS[docType]).infant) {
+        form.append('babyCompliance', JSON.stringify(evaluateBabyCompliance(bio)));
+      }
+      // AI eyeglasses verdict for the reviewer badge (human path skips the gate).
+      const g = await detectGlassesFromFile(file);
+      form.append(
+        'glasses',
+        JSON.stringify(
+          g.detected
+            ? { status: 'FAIL', value: g.confidence, message: GLASSES_FAIL_MESSAGE }
+            : { status: 'PASS', value: g.confidence, message: 'No eyeglasses detected.' },
+        ),
+      );
       const submitRes = await fetch('/api/review/submit', { method: 'POST', body: form });
       const submitData = (await submitRes.json()) as { error?: string };
       if (!submitRes.ok) throw new Error(submitData.error ?? 'Upload failed');
@@ -339,13 +346,38 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
     objectsRef.current = detection?.objects ?? null;
     objectSharpnessRef.current = detection?.objectSharpness ?? null;
 
-    setGateChecks(
-      buildGateChecks(bio, DOCUMENT_SPECS[docType], {
-        quality,
-        objects: detection?.objects,
-        objectSharpness: detection?.objectSharpness ?? null,
-      }).checks,
-    );
+    // AI eyeglasses detection (ONNX model → heuristic fallback). Runs before the
+    // gate so glasses block generation (no PhotoRoom) just like every other rule.
+    const glasses = bio.faceDetected ? await detectGlassesFromFile(file) : undefined;
+    glassesRef.current = glasses ?? null;
+
+    const gateResult = buildGateChecks(bio, DOCUMENT_SPECS[docType], {
+      quality,
+      objects: detection?.objects,
+      objectSharpness: detection?.objectSharpness ?? null,
+      glasses,
+    });
+
+    // Baby-compliance dev log — confirms the decision + that PhotoRoom only runs on PASS.
+    if (getBiometricConfig(DOCUMENT_SPECS[docType]).infant) {
+      console.log('[baby-compliance]', {
+        document: docType,
+        engine: 'Baby',
+        smileScore: bio.smileScore,
+        mouthGap: bio.mouthGap,
+        eyeOpenness: bio.eyeOpenness,
+        tilt: bio.roll,
+        yaw: bio.yaw,
+        pitch: bio.pitch,
+        glassesDetected: glasses?.detected ?? false,
+        detectedObjects: detection?.objects?.detectedObjects?.map((d) => d.label) ?? [],
+        decision: gateResult.passed ? 'PASS' : 'FAIL',
+        failedChecks: gateResult.checks.filter((c) => c.status === 'FAIL').map((c) => c.label),
+        photoRoomWillBeCalled: gateResult.passed,
+      });
+    }
+
+    setGateChecks(gateResult.checks);
   };
 
   // Step 2: the panel finished revealing every check.
@@ -563,12 +595,8 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
             </div>
           )}
 
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-brand-400 transition-colors"
-          >
-            {preview ? (
+          {preview ? (
+            <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center">
               <div className="space-y-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={preview} alt="Preview" className="max-h-52 mx-auto rounded-lg object-contain" />
@@ -577,24 +605,10 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
                   Use a different photo
                 </button>
               </div>
-            ) : (
-              <div>
-                <div className="text-5xl mb-3">📷</div>
-                <p className="font-semibold text-gray-700 mb-1">Drop your photo here</p>
-                <p className="text-sm text-gray-400 mb-5">or</p>
-                <label className="cursor-pointer bg-brand-600 text-white px-6 py-3 rounded-xl hover:bg-brand-700 transition-colors font-semibold text-sm">
-                  Browse files
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif"
-                    className="sr-only"
-                    onChange={handleFileChange}
-                  />
-                </label>
-                <p className="text-xs text-gray-400 mt-4">JPEG · PNG · WEBP · HEIC · max 10 MB</p>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <PhotoPicker onSelect={setFileWithValidation} />
+          )}
 
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-xl">

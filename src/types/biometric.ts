@@ -36,6 +36,9 @@ export interface BiometricData {
   leftEyeY: number;
   rightEyeY: number;
   eyesOpen: boolean;
+  /** Average eye-aspect-ratio (0..~0.4). Lets the baby engine tell a sleepy,
+   *  partly-open infant from fully-closed eyes. Optional (older payloads omit it). */
+  eyeOpenness?: number;
 
   // Head pose (degrees)
   yaw: number;   // turn left/right
@@ -79,6 +82,8 @@ export interface ImageQualityMetrics {
   lightingBalanceScore?: number;
   /** Fraction of deep-shadow face pixels, 0..1. (exposure) */
   shadowScore?: number;
+  /** Nose-bridge ÷ cheek strong-edge ratio — high ⇒ eyeglasses frame present. */
+  glassesScore?: number;
   /** True when pixel sampling succeeded; false → metrics unknown (skip, don't fail). */
   measured: boolean;
 }

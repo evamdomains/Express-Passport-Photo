@@ -2,9 +2,17 @@ import type { BiometricData, ImageQualityMetrics } from '@/types/biometric';
 import type { DocumentSpec } from '@/types/document';
 import { getBiometricConfig } from './biometric-config';
 import { computeCrop, evaluate } from './PassportComplianceEngine';
-import { evaluateImageQuality, evaluateExposure } from './image-quality';
+import { evaluateImageQuality, evaluateExposure, evaluateGlasses, GLASSES_FAIL_MESSAGE } from './image-quality';
 import { evaluateBabyGate } from './baby-gate';
+import {
+  evaluateBabyEyes,
+  evaluateBabyMouth,
+  evaluateBabyExpression,
+  evaluateBabyHeadTilt,
+  evaluateBabyHeadRotation,
+} from './baby-compliance';
 import type { ObjectsAndObstruction } from './object-compliance';
+import type { GlassesResult } from './GlassesDetector';
 
 /**
  * Pre-PhotoRoom compliance gate — STRICT.
@@ -29,6 +37,7 @@ export interface GateCheck {
     | 'face'
     | 'single'
     | 'exposure'
+    | 'glasses'
     | 'sharpness'
     | 'quality'
     | 'eyeVisibility'
@@ -40,7 +49,10 @@ export interface GateCheck {
     | 'size'
     | 'eyes'
     | 'mouth'
-    | 'head';
+    | 'expression'
+    | 'head'
+    | 'headTilt'
+    | 'headRotation';
   label: string;
   status: GateStatus;
   message: string;
@@ -57,6 +69,8 @@ export interface GateExtras {
   objects?: ObjectsAndObstruction;
   /** Sharpest detected-object ROI variance-of-Laplacian (baby depth-of-field check). */
   objectSharpness?: number | null;
+  /** AI eyeglasses verdict (ONNX model). Preferred over the heuristic when present. */
+  glasses?: GlassesResult;
 }
 
 // Face size is AUTO-CORRECTED by the target-ratio scaler, so we never reject a
@@ -105,6 +119,17 @@ export function buildGateChecks(bio: BiometricData, spec: DocumentSpec, extras?:
   const exposure = evaluateExposure(extras?.quality);
   if (push({ key: 'exposure', label: 'Exposure', status: exposure.status, message: exposure.message })) return finalize(checks);
 
+  // 4 — Eyeglasses. Universal for EVERY document type; a FAIL stops the gate so
+  // PhotoRoom is never called on a photo where the subject is wearing glasses.
+  // Prefer the AI model verdict (extras.glasses); fall back to the heuristic
+  // (quality.glassesScore) when the model wasn't run / was unavailable.
+  const glasses = extras?.glasses
+    ? extras.glasses.detected
+      ? { status: 'FAIL' as const, message: GLASSES_FAIL_MESSAGE }
+      : { status: 'PASS' as const, message: 'No eyeglasses detected.' }
+    : evaluateGlasses(extras?.quality);
+  if (push({ key: 'glasses', label: 'No Eyeglasses', status: glasses.status, message: glasses.message })) return finalize(checks);
+
   if (cfg.infant) {
     // ── STRICT US Baby Passport gate (baby docs ONLY) ──
     // Replaces the generic quality/object checks with 7 strict layers: any
@@ -147,9 +172,8 @@ export function buildGateChecks(bio: BiometricData, spec: DocumentSpec, extras?:
     }
   }
 
-  const report = evaluate(bio, spec, cfg);
-
-  // 8 — Face size (auto-scaled; fail only when genuinely unrecoverable)
+  // 8 — Face size (auto-scaled; fail only when genuinely unrecoverable). Sizing
+  // is NEVER relaxed for babies — same biometric requirement as adults.
   const crop = computeCrop(bio, spec, cfg);
   const tooSmall = crop.upscale > MAX_UPSCALE;
   const tooLarge = bio.faceHeightNorm >= MAX_FACE_FILL;
@@ -168,6 +192,29 @@ export function buildGateChecks(bio: BiometricData, spec: DocumentSpec, extras?:
   }
   push({ key: 'size', label: 'Face Size', status: 'PASS', message: `Face size OK (auto-scaled to ${Math.round(cfg.targetRatio * 100)}%).` });
 
+  // 9+ — Eyes / mouth / expression / head: DEDICATED engine per age group. Babies
+  // use realistic infant rules (baby-compliance.ts); adults use evaluate().
+  if (cfg.infant) {
+    const eyes = evaluateBabyEyes(bio);
+    if (push({ key: 'eyes', label: 'Eye Openness', status: eyes.status, message: eyes.message })) return finalize(checks);
+
+    const mouth = evaluateBabyMouth(bio);
+    if (push({ key: 'mouth', label: 'Mouth', status: mouth.status, message: mouth.message })) return finalize(checks);
+
+    const expression = evaluateBabyExpression(bio);
+    if (push({ key: 'expression', label: 'Expression', status: expression.status, message: expression.message })) return finalize(checks);
+
+    const tilt = evaluateBabyHeadTilt(bio);
+    if (push({ key: 'headTilt', label: 'Head Tilt', status: tilt.status, message: tilt.message })) return finalize(checks);
+
+    const rotation = evaluateBabyHeadRotation(bio);
+    if (push({ key: 'headRotation', label: 'Head Rotation', status: rotation.status, message: rotation.message })) return finalize(checks);
+
+    return finalize(checks);
+  }
+
+  const report = evaluate(bio, spec, cfg);
+
   // 9 — Eye position (open + level)
   if (push({ key: 'eyes', label: 'Eye Position', status: report.eyeAlignment.status, message: report.eyeAlignment.message })) return finalize(checks);
 
@@ -185,6 +232,7 @@ export const GATE_STEP_LABELS: { key: GateCheck['key']; label: string }[] = [
   { key: 'face', label: 'Face Detected' },
   { key: 'single', label: 'Single Face' },
   { key: 'exposure', label: 'Exposure' },
+  { key: 'glasses', label: 'No Eyeglasses' },
   { key: 'sharpness', label: 'Sharpness' },
   { key: 'quality', label: 'Face Quality' },
   { key: 'eyeVisibility', label: 'Eye Visibility' },
@@ -201,6 +249,7 @@ export const BABY_STEP_LABELS: { key: GateCheck['key']; label: string }[] = [
   { key: 'face', label: 'Face Detected' },
   { key: 'single', label: 'Single Face' },
   { key: 'exposure', label: 'Exposure' },
+  { key: 'glasses', label: 'No Eyeglasses' },
   { key: 'quality', label: 'Face Quality' },
   { key: 'eyeVisibility', label: 'Eye Visibility' },
   { key: 'objects', label: 'Object Detection' },
@@ -209,9 +258,11 @@ export const BABY_STEP_LABELS: { key: GateCheck['key']; label: string }[] = [
   { key: 'obstruction', label: 'Face Occlusion' },
   { key: 'dof', label: 'Depth of Field' },
   { key: 'size', label: 'Face Size' },
-  { key: 'eyes', label: 'Eye Position' },
-  { key: 'mouth', label: 'Mouth Position' },
-  { key: 'head', label: 'Head Position' },
+  { key: 'eyes', label: 'Eye Openness' },
+  { key: 'mouth', label: 'Mouth' },
+  { key: 'expression', label: 'Expression' },
+  { key: 'headTilt', label: 'Head Tilt' },
+  { key: 'headRotation', label: 'Head Rotation' },
 ];
 
 /** Step labels for a document — the strict baby set for infant docs, else the standard set. */

@@ -36,6 +36,10 @@ const CROWN_EXTRA = 0.3;
 // Geometric thresholds (deterministic — independent of blendshape quirks).
 const EYE_OPEN_EAR = 0.15;     // eye-aspect-ratio below this → eyes closed
 const MOUTH_OPEN_RATIO = 0.15; // inner-lip gap ÷ mouth width above this → open/teeth
+// Teeth can only be visible if the lips are actually parted. Below this inner-lip
+// gap the mouth is closed, so we ignore the pixel teeth score (prevents bright
+// skin / lip-line pixels on a closed mouth from reading as "visible teeth").
+const TEETH_MIN_GAP = 0.06;
 
 /** Eye Aspect Ratio: vertical lid opening ÷ horizontal eye width, in pixels. */
 function eyeAspect(up: LM, low: LM, inn: LM, out: LM, W: number, H: number): number {
@@ -163,6 +167,7 @@ export function buildBiometrics(
     leftEyeY: r(lEye.y * imageHeight, 1),
     rightEyeY: r(rEye.y * imageHeight, 1),
     eyesOpen,
+    eyeOpenness: r(avgEAR, 4),
     yaw: r(yaw, 1),
     pitch: r(pitch, 1),
     roll: r(roll, 1),
@@ -171,6 +176,7 @@ export function buildBiometrics(
     mouthGap: r(mouthOpenRatio, 4),
     smileScore: r(smile, 3),
     mouthState,
-    teethVisibilityScore: r(teethVisibilityScore, 4),
+    // Closed lips ⇒ no teeth possible, regardless of pixel sampling noise.
+    teethVisibilityScore: r(mouthOpenRatio >= TEETH_MIN_GAP ? teethVisibilityScore : 0, 4),
   };
 }

@@ -41,6 +41,39 @@ export const EXPOSURE = {
 } as const;
 
 /**
+ * Eyeglasses detection threshold. `glassesScore` is the ratio of strong-edge
+ * density on the nose bridge (between the eyes) to smooth cheek skin: a glasses
+ * bridge/frame is a hard edge that bare skin lacks, so the ratio spikes. The
+ * cheek baseline normalizes for overall image sharpness, and the ROI sits
+ * BETWEEN the eyes (not on the brows), so thick eyebrows / shadows don't trip it.
+ * Conservative default — tune against real uploads.
+ */
+export const GLASSES = {
+  // Variance-of-Laplacian ratio (nose bridge ÷ cheek) — used ONLY by the
+  // heuristic fallback when the ONNX model is unavailable. A hard frame line
+  // spikes the bridge variance; a bare bridge stays near the cheek (~1–1.5).
+  failRatio: 2.0,
+} as const;
+
+/** Customer-facing eyeglasses rejection copy (shared by the model + heuristic). */
+export const GLASSES_FAIL_MESSAGE =
+  'Eyeglasses detected. Passport & visa photos require your eyes fully visible without glasses — please remove your glasses and retake or upload a new photo.';
+
+/**
+ * Eyeglasses verdict from the browser-measured nose-bridge edge ratio. PASS when
+ * unmeasured (no face / sampling failed) — never fabricate a rejection.
+ */
+export function evaluateGlasses(m?: Pick<ImageQualityMetrics, 'measured' | 'glassesScore'>): AxisResult {
+  if (!m || !m.measured || m.glassesScore == null) {
+    return { status: 'PASS', message: 'Eyeglasses check not measured.' };
+  }
+  if (m.glassesScore >= GLASSES.failRatio) {
+    return { status: 'FAIL', value: round(m.glassesScore), message: GLASSES_FAIL_MESSAGE };
+  }
+  return { status: 'PASS', value: round(m.glassesScore), message: 'No eyeglasses detected.' };
+}
+
+/**
  * Exposure verdict from the browser-measured face-region metrics. Mirrors the
  * server analyzer's logic. PASS when metrics are unmeasured (never fabricate a
  * failure from missing data — the server analyzer is the authoritative backstop).

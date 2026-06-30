@@ -208,6 +208,13 @@ function rank(s: AxisResult['status']): number {
 }
 
 /**
+ * Adult compliance engine (alias of `evaluate`) — named for symmetry with
+ * `evaluateBabyCompliance` in baby-compliance.ts. Babies do NOT use this; the
+ * gate routes infant documents to the dedicated baby evaluators instead.
+ */
+export const evaluateAdultCompliance = evaluate;
+
+/**
  * Map the rich report back onto the existing `ComplianceResult` shape so the DB
  * column, Stripe webhook, order-confirmation, and legacy UI keep working
  * unchanged. The full report is attached under `report`.

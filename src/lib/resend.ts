@@ -363,6 +363,8 @@ export async function sendReviewRequestEmail({
   customerPhone,
   documentTypeName,
   photoUrl,
+  glassesDetected = false,
+  babyCompliance,
 }: {
   orderId: string;
   customerName: string | null;
@@ -371,6 +373,16 @@ export async function sendReviewRequestEmail({
   documentTypeName: string;
   /** A viewable URL for the uploaded original (signed, time-limited). */
   photoUrl: string | null;
+  /** Eyeglasses were detected at upload — shown as a reviewer badge. */
+  glassesDetected?: boolean;
+  /** Baby-passport per-axis verdicts (infant docs) — shown to the reviewer. */
+  babyCompliance?: {
+    eyes: { status: string; message: string };
+    mouth: { status: string; message: string };
+    expression: { status: string; message: string };
+    headTilt: { status: string; message: string };
+    headRotation: { status: string; message: string };
+  };
 }) {
   const reviewEmail = process.env.REVIEW_TEAM_EMAIL ?? process.env.ADMIN_EMAIL;
   if (!reviewEmail) {
@@ -390,6 +402,32 @@ export async function sendReviewRequestEmail({
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px">
         <h1 style="color:#1A3A5C;margin-bottom:8px">New photo for expert review</h1>
+        ${
+          glassesDetected
+            ? `<div style="display:inline-block;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:13px;font-weight:700;border-radius:8px;padding:8px 12px;margin-bottom:16px">⚠ Eyeglasses Detected — eyes must be fully visible; likely a reject.</div>`
+            : ''
+        }
+        ${
+          babyCompliance
+            ? (() => {
+                const row = (label: string, a: { status: string; message: string }) => {
+                  const color = a.status === 'FAIL' ? '#b91c1c' : a.status === 'WARNING' ? '#92400e' : '#15803d';
+                  const mark = a.status === 'FAIL' ? '✗' : a.status === 'WARNING' ? '!' : '✓';
+                  return `<tr><td style="padding:4px 0;color:#6b7280;width:130px">${label}</td><td style="color:${color};font-size:13px"><strong>${mark} ${a.status}</strong> — ${escapeHtml(a.message)}</td></tr>`;
+                };
+                return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:20px">
+                  <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#1A3A5C;text-transform:uppercase;letter-spacing:.04em">Baby compliance (infant rules)</p>
+                  <table style="width:100%;border-collapse:collapse;font-size:13px">
+                    ${row('Eye Openness', babyCompliance.eyes)}
+                    ${row('Mouth', babyCompliance.mouth)}
+                    ${row('Expression', babyCompliance.expression)}
+                    ${row('Head Tilt', babyCompliance.headTilt)}
+                    ${row('Head Rotation', babyCompliance.headRotation)}
+                  </table>
+                </div>`;
+              })()
+            : ''
+        }
         <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px">
           <tr><td style="padding:6px 0;color:#6b7280;width:140px">Name</td><td style="color:#111827">${customerName ?? '—'}</td></tr>
           <tr><td style="padding:6px 0;color:#6b7280">Email</td><td style="color:#111827">${customerEmail}</td></tr>

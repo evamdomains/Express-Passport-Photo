@@ -140,6 +140,22 @@ export default async function UploadPage({
           <span>Your photo will be ready in <strong>~45 seconds</strong></span>
         </div>
 
+        {/* Help customers pass first time: link to the requirements guide. */}
+        <a
+          href="/photo-requirements"
+          className="flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3 mb-6 text-sm transition-colors hover:border-brand-300 hover:bg-brand-50/40"
+        >
+          <span className="flex items-center gap-2 text-gray-700">
+            <svg className="w-4 h-4 shrink-0 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M12 3 4 6v6c0 4.5 3.4 7.6 8 9 4.6-1.4 8-4.5 8-9V6l-8-3Z" />
+            </svg>
+            Not sure what’s accepted? <strong className="font-semibold text-brand-700">View Photo Requirements</strong>
+          </span>
+          <svg className="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+
         <PhotoUploadFlow />
       </section>
 

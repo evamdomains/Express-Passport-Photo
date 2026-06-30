@@ -207,6 +207,52 @@ function exposureOf(gray: Float64Array, w: number, h: number): {
   };
 }
 
+/**
+ * Eyeglasses signal: strong-edge density on the NOSE BRIDGE (between the eyes) ÷
+ * smooth cheek skin. A glasses bridge/frame is a hard edge bare skin lacks, so
+ * the ratio spikes. The cheek baseline normalizes for image sharpness, and the
+ * ROI sits between the eyes (below the brows) — so thick eyebrows, eye shadows,
+ * and natural shadows don't trip it. Returns undefined when not sampleable.
+ */
+function detectGlassesScore(lm: LM[], bitmap: ImageBitmap): number | undefined {
+  try {
+    const rIn = lm[IDX.rEyeIn], lIn = lm[IDX.lEyeIn];
+    const rUp = lm[IDX.rEyeUp], lUp = lm[IDX.lEyeUp], rLow = lm[IDX.rEyeLow];
+    const nose = lm[IDX.noseTip], chin = lm[IDX.chin];
+    if (!rIn || !lIn || !rUp || !lUp) return undefined;
+
+    const cx = (rIn.x + lIn.x) / 2;
+    const gap = Math.abs(lIn.x - rIn.x) || 0.04;
+    const eyeTopY = (rUp.y + lUp.y) / 2;
+    const innerY = (rIn.y + lIn.y) / 2;
+    const noseY = nose ? nose.y : innerY + gap * 1.6;
+
+    // Tall, narrow strip down the nose midline between the eyes: it contains the
+    // glasses frame-top + bridge wherever they sit, and is bare smooth skin
+    // otherwise. Eyebrows sit ABOVE/LATERAL to this strip, so they don't count.
+    // Sampled at higher res so thin wire frames still register as edges.
+    const top = eyeTopY - gap * 0.45;
+    const bottom = innerY + (noseY - innerY) * 0.55;
+    const bridgeBox: Box = { x: cx - gap * 0.5, y: top, width: gap, height: Math.max(bottom - top, gap * 0.8) };
+
+    // Smooth-skin reference under the right eye (mid-cheek) for sharpness baseline.
+    const cheekTop = rLow ? rLow.y + (chin ? (chin.y - rLow.y) * 0.22 : 0.04) : innerY + 0.07;
+    const cheekBox: Box = { x: rIn.x - gap * 0.2, y: cheekTop, width: gap, height: gap * 0.9 };
+
+    const bridge = roiGray(bitmap, bridgeBox, 128);
+    if (!bridge) return undefined;
+    const cheek = roiGray(bitmap, cheekBox, 128);
+    const bridgeStats = laplacianStats(bridge.gray, bridge.w, bridge.h);
+    const cheekStats = cheek ? laplacianStats(cheek.gray, cheek.w, cheek.h) : { variance: 1, edgeDensity: 0.02 };
+    // Variance-of-Laplacian ratio: a hard frame line spikes the bridge variance
+    // far more than grainy skin noise does. This is the HEURISTIC FALLBACK only —
+    // GlassesDetector prefers the ONNX model when present.
+    return round(bridgeStats.variance / Math.max(cheekStats.variance, 1), 3);
+  } catch {
+    return undefined;
+  }
+}
+
 function eyeBox(inn: LM, out: LM, up: LM, low: LM): Box | null {
   if (!inn || !out || !up || !low) return null;
   const left = Math.min(inn.x, out.x), right = Math.max(inn.x, out.x);
@@ -248,6 +294,7 @@ function computeImageQuality(lm: LM[], bitmap: ImageBitmap): ImageQualityMetrics
 
     const faceQualityScore = computeFaceQualityScore({ sharpnessScore, contrast, edgeDensity });
     const exposure = exposureOf(face.gray, face.w, face.h);
+    const glassesScore = detectGlassesScore(lm, bitmap);
     return {
       sharpnessScore,
       eyeSharpness,
@@ -255,6 +302,7 @@ function computeImageQuality(lm: LM[], bitmap: ImageBitmap): ImageQualityMetrics
       edgeDensity,
       faceQualityScore,
       ...exposure,
+      glassesScore,
       measured: true,
     };
   } catch {
@@ -267,34 +315,58 @@ function computeImageQuality(lm: LM[], bitmap: ImageBitmap): ImageQualityMetrics
  * image-quality metrics from a single decode + detect pass. Throws if the image
  * cannot be decoded; returns `faceDetected:false` if the model finds no face.
  */
+async function analyzeBitmap(
+  bitmap: ImageBitmap,
+  cfg: BiometricConfig,
+): Promise<{ bio: BiometricData; quality?: ImageQualityMetrics }> {
+  const landmarker = await getLandmarker();
+  const result = landmarker.detect(bitmap);
+  const faces = result.faceLandmarks ?? [];
+  if (faces.length === 0) {
+    return { bio: emptyBiometrics(bitmap.width, bitmap.height) };
+  }
+  const categories = result.faceBlendshapes?.[0]?.categories;
+  const matrixData = result.facialTransformationMatrixes?.[0]?.data;
+  const teeth = teethVisibility(faces[0], bitmap);
+  const bio = buildBiometrics(
+    faces[0],
+    categories,
+    matrixData ? Array.from(matrixData) : undefined,
+    bitmap.width,
+    bitmap.height,
+    faces.length,
+    cfg,
+    teeth,
+  );
+  const quality = computeImageQuality(faces[0], bitmap);
+  return { bio, quality };
+}
+
 export async function analyzeImageFile(
   file: File,
   cfg: BiometricConfig,
 ): Promise<{ bio: BiometricData; quality?: ImageQualityMetrics }> {
   const bitmap = await createImageBitmap(file);
   try {
+    return await analyzeBitmap(bitmap, cfg);
+  } finally {
+    bitmap.close?.();
+  }
+}
+
+/**
+ * Heuristic-fallback eyeglasses score (nose-bridge ÷ cheek variance ratio) for a
+ * bitmap. Used by GlassesDetector ONLY when the ONNX model is unavailable.
+ * Returns undefined when no face is visible / not sampleable.
+ */
+export async function detectGlassesScoreFromBitmap(bitmap: ImageBitmap): Promise<number | undefined> {
+  try {
     const landmarker = await getLandmarker();
     const result = landmarker.detect(bitmap);
     const faces = result.faceLandmarks ?? [];
-    if (faces.length === 0) {
-      return { bio: emptyBiometrics(bitmap.width, bitmap.height) };
-    }
-    const categories = result.faceBlendshapes?.[0]?.categories;
-    const matrixData = result.facialTransformationMatrixes?.[0]?.data;
-    const teeth = teethVisibility(faces[0], bitmap);
-    const bio = buildBiometrics(
-      faces[0],
-      categories,
-      matrixData ? Array.from(matrixData) : undefined,
-      bitmap.width,
-      bitmap.height,
-      faces.length,
-      cfg,
-      teeth,
-    );
-    const quality = computeImageQuality(faces[0], bitmap);
-    return { bio, quality };
-  } finally {
-    bitmap.close?.();
+    if (faces.length === 0) return undefined;
+    return detectGlassesScore(faces[0], bitmap);
+  } catch {
+    return undefined;
   }
 }

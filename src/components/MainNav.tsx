@@ -15,6 +15,7 @@ const DOCUMENT_ITEMS: DropdownItem[] = [
   { href: '/us-passport-photo', label: 'US Passport', desc: '2×2 in · White background' },
   { href: '/canada-passport-photo', label: 'Canada Passport', desc: '50×70mm · White background' },
   { href: '/baby-passport-photo', label: 'Baby Passport', desc: 'Infant & newborn photos' },
+  { href: '/photo-requirements', label: 'Photo Requirements', desc: 'What passes & what gets rejected' },
 ];
 
 const ABOUT_ITEMS: DropdownItem[] = [

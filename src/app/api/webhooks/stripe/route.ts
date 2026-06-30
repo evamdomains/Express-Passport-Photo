@@ -155,6 +155,8 @@ export async function POST(req: NextRequest) {
         customerPhone: order.customer_phone ?? null,
         documentTypeName: spec.name,
         photoUrl: reviewPhotoUrl,
+        glassesDetected: order.compliance_data?.glasses?.status === 'FAIL',
+        babyCompliance: order.compliance_data?.babyCompliance,
       });
       console.log('[webhook:human] review-request email sent to team');
     } catch (err) {

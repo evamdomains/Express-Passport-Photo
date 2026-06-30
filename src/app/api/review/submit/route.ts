@@ -34,6 +34,20 @@ export async function POST(req: NextRequest) {
       if (typeof bioRaw === 'string') biometric = JSON.parse(bioRaw) as BiometricData;
     } catch { /* ignore malformed biometric — approval falls back to cover resize */ }
 
+    // Eyeglasses verdict (browser-measured) — stored so reviewers see a badge.
+    let glasses: ComplianceResult['glasses'];
+    try {
+      const gRaw = formData.get('glasses');
+      if (typeof gRaw === 'string') glasses = JSON.parse(gRaw) as ComplianceResult['glasses'];
+    } catch { /* ignore malformed glasses verdict */ }
+
+    // Baby-passport per-axis verdicts (infant docs) — shown to human reviewers.
+    let babyCompliance: ComplianceResult['babyCompliance'];
+    try {
+      const bRaw = formData.get('babyCompliance');
+      if (typeof bRaw === 'string') babyCompliance = JSON.parse(bRaw) as ComplianceResult['babyCompliance'];
+    } catch { /* ignore malformed baby compliance */ }
+
     if (!file || !orderId) {
       return NextResponse.json({ error: 'Missing photo or orderId' }, { status: 400 });
     }
@@ -93,8 +107,23 @@ export async function POST(req: NextRequest) {
           issues: [],
           warnings: [],
           biometric,
+          ...(glasses ? { glasses } : {}),
+          ...(babyCompliance ? { babyCompliance } : {}),
         }
-      : undefined;
+      : glasses
+        ? {
+            passed: true,
+            faceDetected: false,
+            faceCount: 0,
+            headHeightPercent: null,
+            eyesOpen: null,
+            mouthClosed: null,
+            facingForward: null,
+            issues: [],
+            warnings: [],
+            glasses,
+          }
+        : undefined;
 
     const { error: updateError } = await supabase
       .from('orders')

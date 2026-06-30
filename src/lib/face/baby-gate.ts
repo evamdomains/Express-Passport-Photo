@@ -83,15 +83,15 @@ export function evaluateBabyGate(input: BabyGateInput): BabyLayer[] {
   const objectsLayer: BabyLayer = !objs
     ? pass('objects', 'Object Detection', 'Object detection unavailable.')
     : physical.length > 0
-      ? fail('objects', 'Object Detection', `Object detected in baby passport photo (${physical.map((d) => d.label.toLowerCase()).join(', ')}).`)
+      ? fail('objects', 'Object Detection', `Please remove the ${physical.map((d) => d.label.toLowerCase()).join(', ')} (e.g. pacifier, bottle, toy) before taking your baby's photo.`)
       : pass('objects', 'Object Detection', 'No objects detected.');
 
-  // ── Layer 4 — Hands (handCount > 0 → fail) ──
+  // ── Layer 4 — Hands / fingers (handCount > 0 → fail) ──
   const hands = list.filter((d) => d.kind === 'hand');
   const handsLayer: BabyLayer = !objs
     ? pass('hands', 'Hands Detection', 'Hand detection unavailable.')
     : hands.length > 0
-      ? fail('hands', 'Hands Detection', 'Hands detected in photo.')
+      ? fail('hands', 'Hands Detection', "Please remove any finger or hand from your baby's face (and out of the mouth).")
       : pass('hands', 'Hands Detection', 'No hands detected.');
 
   // ── Layer 5 — Extra Person (faceCount > 1 OR extra person box) ──
@@ -106,7 +106,7 @@ export function evaluateBabyGate(input: BabyGateInput): BabyLayer[] {
   const obstruction: BabyLayer = !objs
     ? pass('obstruction', 'Face Occlusion', 'Occlusion not measured.')
     : occluding.length > 0
-      ? fail('obstruction', 'Face Occlusion', 'Face is partially obstructed.')
+      ? fail('obstruction', 'Face Occlusion', "Make sure your baby's face is fully visible — nothing covering the mouth, nose, or eyes.")
       : pass('obstruction', 'Face Occlusion', 'Face is fully visible.');
 
   // ── Layer 7 — Depth of Field (object sharper than the face) ──
