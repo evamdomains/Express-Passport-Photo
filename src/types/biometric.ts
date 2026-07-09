@@ -4,6 +4,13 @@
  * server can use the same types and the PassportComplianceEngine stays isomorphic.
  */
 
+// Type-only import (erased at compile time — no runtime/DOM coupling). Lets the
+// gaze measurement ride along inside BiometricData across the client→server boundary.
+import type { EyeGazeResult } from '@/lib/face/EyeGazeEstimator';
+import type { EyeVisibilityResult } from '@/lib/face/EyeVisibilityEvaluator';
+import type { EyeRegions, EyeOcclusionResult } from '@/lib/face/EyeOcclusionEvaluator';
+import type { EyePixelVisibilityResult } from '@/lib/face/EyePixelVisibilityEvaluator';
+
 export type AxisStatus = 'PASS' | 'WARNING' | 'FAIL';
 export type MouthState = 'NEUTRAL' | 'SLIGHT_SMILE' | 'BROAD_SMILE' | 'OPEN_MOUTH';
 
@@ -53,6 +60,38 @@ export interface BiometricData {
   mouthState: MouthState;
   /** Fraction of the inner-mouth ROI that looks like teeth/enamel (0..1). */
   teethVisibilityScore: number;
+
+  /**
+   * Eye-gaze measurement from the EyeGazeEstimator (pure geometry, no PASS/FAIL).
+   * Measured in the browser where the raw MediaPipe landmarks are available, then
+   * carried here so the PassportComplianceEngine can apply document-specific gaze
+   * rules on BOTH the browser gate and the server. Optional — older payloads / the
+   * baby engine omit it, in which case the engine simply does not gate on gaze.
+   */
+  gaze?: EyeGazeResult;
+
+  /**
+   * Eye-visibility verdict (adult pipeline only) — whether the eyes were usable
+   * for gaze estimation. Measured before the gaze estimator and carried here so
+   * the compliance engine can FAIL early without evaluating Eye Position. Optional
+   * (undefined for infants / older payloads).
+   */
+  eyeVisibility?: EyeVisibilityResult;
+
+  /** Padded eye-region boxes (from MediaPipe eye landmarks) for the occlusion check. */
+  eyeRegions?: EyeRegions;
+  /**
+   * Eye-occlusion verdict (adult pipeline only) — whether an external object covers
+   * the eye region. Second half of Eye Visibility (with `eyeVisibility` geometry).
+   * Optional; set only when object detections are available.
+   */
+  eyeOcclusion?: EyeOcclusionResult;
+  /**
+   * PIXEL-based eye-visibility verdict (adult only) — texture/contrast of each eye
+   * crop, catching a covered eye that estimated landmarks can't reveal. Third part
+   * of Eye Visibility (geometry + object-occlusion + pixel). Optional.
+   */
+  eyePixelVisibility?: EyePixelVisibilityResult;
 }
 
 /**
@@ -103,6 +142,26 @@ export interface AxisResult {
   /** Numeric value where meaningful (e.g. face ratio 0.57). */
   value?: number;
   message: string;
+  /**
+   * Stable machine-readable reason code (e.g. 'EYE_LOOKING_LEFT'). Locale- and
+   * copy-independent, so the frontend can localize / route UX off the code while
+   * `message` stays a sensible English default. Optional — populated where useful.
+   */
+  code?: string;
+  /** Eye-gaze diagnostics — populated only on the eyeAlignment axis when a gaze estimate exists. */
+  gaze?: EyeGazeAxisDetail;
+}
+
+/** Diagnostics attached to the eyeAlignment axis: what was measured vs. what the document allows. */
+export interface EyeGazeAxisDetail {
+  /** Normalized horizontal iris position, 0..1 (0.5 = centered / looking straight). */
+  averageHorizontal: number;
+  /** Normalized vertical iris position, 0..1 (0.5 = centered / looking straight). */
+  averageVertical: number;
+  /** Allowed horizontal range [min, max] for the selected document. */
+  allowedHorizontal: [number, number];
+  /** Allowed vertical range [min, max] for the selected document. */
+  allowedVertical: [number, number];
 }
 
 export interface ComplianceReport {
@@ -112,6 +171,12 @@ export interface ComplianceReport {
   eyeAlignment: AxisResult;
   mouth: AxisResult;
   headPosition: AxisResult;
+  /**
+   * Combined eye-gaze + head-pitch consistency verdict (evaluateVisualAttention).
+   * Diagnostic/transparency field — it reconciles eyeAlignment and headPosition so
+   * they can never give contradictory up/down guidance. Optional (older payloads omit it).
+   */
+  visualAttention?: AxisResult;
   /** OPTIMAL = within the tight optimal range; COMPLIANT = within the official
    *  range but not optimal; NON_COMPLIANT = a hard failure. */
   overall: 'OPTIMAL' | 'COMPLIANT' | 'NON_COMPLIANT';

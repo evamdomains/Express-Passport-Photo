@@ -13,7 +13,10 @@ import { buildGateChecks, gateStepLabels, type GateCheck } from '@/lib/face/comp
 import { GLASSES_FAIL_MESSAGE } from '@/lib/face/image-quality';
 import { detectGlassesFromFile, type GlassesResult } from '@/lib/face/GlassesDetector';
 import { evaluateBabyCompliance } from '@/lib/face/baby-compliance';
-import { evaluateObjects, type ObjectsAndObstruction, type Box } from '@/lib/face/object-compliance';
+import { evaluateObjects, type ObjectsAndObstruction, type Box, type DetectedObject } from '@/lib/face/object-compliance';
+import { evaluateEyeOcclusionFromRegions, toComplianceDetections } from '@/lib/face/EyeOcclusionEvaluator';
+import { useFreeCanadianFlow } from '@/hooks/useFreeCanadianFlow';
+import { isFreeCanadianDocument } from '@/config/features';
 
 /** Approximate face bounding box (normalized) from the biometric, for object-overlap checks. */
 function faceBoxFromBio(bio: BiometricData): Box {
@@ -35,11 +38,16 @@ async function detectObjects(
   file: File,
   bio: BiometricData,
   infant: boolean,
-): Promise<{ objects: ObjectsAndObstruction; objectSharpness: number | null } | undefined> {
+): Promise<
+  | { objects: ObjectsAndObstruction; objectSharpness: number | null; detections: DetectedObject[] }
+  | undefined
+> {
   try {
     const { detectObjectsFromFile } = await import('@/lib/face/ObjectDetectorYolo');
     const { detections, objectSharpness } = await detectObjectsFromFile(file);
-    return { objects: evaluateObjects(detections, faceBoxFromBio(bio), { infant }), objectSharpness };
+    // `detections` (raw, with normalized bboxes) are also returned so the caller can
+    // feed the eye-occlusion evaluator (hand/object over the eye region).
+    return { objects: evaluateObjects(detections, faceBoxFromBio(bio), { infant }), objectSharpness, detections };
   } catch {
     return undefined;
   }
@@ -154,7 +162,11 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
   // When a page scopes the selector to a single document type, preselect it.
   const initialDocType = preselected ?? (allowedTypes?.length === 1 ? allowedTypes[0] : null);
 
-  const [step, setStep] = useState<Step>(preselected ? 'path-choice' : 'select-type');
+  // Free Canadian documents skip the "Instant AI vs Expert Review" choice and go
+  // straight to the photo picker (Take Live Selfie / Upload Existing Photo).
+  const [step, setStep] = useState<Step>(
+    preselected ? (isFreeCanadianDocument(preselected) ? 'upload' : 'path-choice') : 'select-type',
+  );
   const [docType, setDocType] = useState<DocumentTypeId | null>(initialDocType);
   const [reviewType, setReviewType] = useState<ReviewType>('ai');
   const [contactName, setContactName] = useState('');
@@ -165,7 +177,7 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
   // idle = upload UI · gate = compliance panel · generating = server fallback overlay
   // generating = AI server pipeline (PhotoRoom etc.) · submitting = human-review
   // upload (no PhotoRoom — just stores the photo, then goes to the $0 checkout).
-  const [phase, setPhase] = useState<'idle' | 'gate' | 'generating' | 'submitting'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'gate' | 'generating' | 'submitting' | 'free-done'>('idle');
   const [gateChecks, setGateChecks] = useState<GateCheck[] | null>(null);
   const [serverRunning, setServerRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -175,13 +187,23 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
   const objectSharpnessRef = useRef<number | null>(null);
   const glassesRef = useRef<GlassesResult | null>(null);
 
+  // FREE Canadian flow (temporary, flag-gated). When active for the selected
+  // document, "Generate" downloads the JPEG directly — no order/checkout/editor.
+  const { isFreeCanadian, generateAndDownload } = useFreeCanadianFlow();
+
   // Keep the step in sync with the URL. Clicking a document card navigates to
   // ?document=<id> (same route, no remount), which flips this flow to the
   // upload step; clearing the param returns to the selection grid.
   useEffect(() => {
     if (preselected) {
       setDocType(preselected);
-      setStep((s) => (s === 'select-type' ? 'path-choice' : s));
+      // Free Canadian → straight to the picker (AI path); everyone else → path-choice.
+      if (isFreeCanadianDocument(preselected)) {
+        setReviewType('ai');
+        setStep((s) => (s === 'select-type' ? 'upload' : s));
+      } else {
+        setStep((s) => (s === 'select-type' ? 'path-choice' : s));
+      }
     } else if (!allowedTypes || allowedTypes.length !== 1) {
       setStep('select-type');
       setDocType(null);
@@ -210,8 +232,49 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
    * (or as a fallback when MediaPipe couldn't run) — this is the only path that
    * reaches /api/process-photo, so PhotoRoom never sees a non-compliant image.
    */
+  /**
+   * FREE Canadian flow — isolated from the premium pipeline. Compliance already
+   * passed (this runs after the gate); here we call /api/free-process-photo, which
+   * runs PhotoRoom + generates the JPEG and returns it for direct download. No
+   * order, checkout, storage, email, preview, or editor navigation.
+   */
+  const runFreeCanadian = async () => {
+    if (!file || !docType) return;
+    try {
+      const res = await generateAndDownload({
+        file,
+        documentTypeId: docType,
+        biometric: bioRef.current ?? undefined,
+        quality: qualityRef.current ?? undefined,
+        objects: objectsRef.current ?? undefined,
+        objectSharpness: objectSharpnessRef.current,
+        glasses: glassesRef.current ?? undefined,
+      });
+      if (res.ok) {
+        setServerRunning(false);
+        setPhase('free-done');
+      } else {
+        setError(res.errors[0] ?? 'Could not generate your photo.');
+        setServerRunning(false);
+        setPhase('idle');
+        setGateChecks(null);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong');
+      setServerRunning(false);
+      setPhase('idle');
+      setGateChecks(null);
+    }
+  };
+
   const runServer = async () => {
     if (!file || !docType) return;
+    // Route Canadian documents to the free flow while the flag is on. Everything
+    // below (order → PhotoRoom → editor → checkout) stays exactly as the premium flow.
+    if (isFreeCanadian(docType)) {
+      await runFreeCanadian();
+      return;
+    }
     try {
       const orderRes = await fetch('/api/orders', {
         method: 'POST',
@@ -351,7 +414,21 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
     const glasses = bio.faceDetected ? await detectGlassesFromFile(file) : undefined;
     glassesRef.current = glasses ?? null;
 
-    const gateResult = buildGateChecks(bio, DOCUMENT_SPECS[docType], {
+    // Eye OCCLUSION (adult only): does a detected object cover the eye region? Uses
+    // the eye regions built from landmarks (bio.eyeRegions) + the object detections.
+    // Inert (PASS) when there are no occluding detections. Attached to bio so the
+    // gate + server re-enforce the same combined Eye Visibility decision.
+    let bioForGate: BiometricData = bio;
+    if (!infant && bio.eyeRegions && detection?.detections) {
+      const eyeOcclusion = evaluateEyeOcclusionFromRegions(
+        bio.eyeRegions,
+        toComplianceDetections(detection.detections),
+      );
+      bioForGate = { ...bio, eyeOcclusion };
+    }
+    bioRef.current = bioForGate;
+
+    const gateResult = buildGateChecks(bioForGate, DOCUMENT_SPECS[docType], {
       quality,
       objects: detection?.objects,
       objectSharpness: detection?.objectSharpness ?? null,
@@ -431,6 +508,32 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
   // Fallback (MediaPipe unavailable): the original server-processing overlay.
   if (phase === 'generating') {
     return <ProcessingOverlay />;
+  }
+
+  // FREE Canadian flow — done. The JPEG has already downloaded. No checkout,
+  // pricing, order summary, email, or human-review UI is shown here.
+  if (phase === 'free-done') {
+    return (
+      <div className="py-16 text-center max-w-sm mx-auto">
+        <div className="text-5xl mb-3">✅</div>
+        <p className="font-bold text-gray-900 text-xl">Your passport photo is ready!</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Your <span className="font-medium">passport-photo.jpeg</span> has been downloaded. Check your Downloads folder.
+        </p>
+        <button
+          onClick={() => runFreeCanadian()}
+          className="mt-6 w-full bg-brand-50 text-brand-700 border border-brand-200 py-3 rounded-xl font-medium hover:bg-brand-100 transition-colors"
+        >
+          ↓ Download again
+        </button>
+        <button
+          onClick={handleRetry}
+          className="mt-3 w-full bg-brand-600 text-white py-3.5 rounded-xl font-bold hover:bg-brand-700 transition-colors"
+        >
+          Create another photo
+        </button>
+      </div>
+    );
   }
 
   // Human review: just uploading the photo before the $0 checkout — NO
@@ -582,7 +685,12 @@ function PhotoUploadFlowInner({ allowedTypes }: { allowedTypes?: DocumentTypeId[
       {step === 'upload' && (
         <div>
           <button
-            onClick={() => setStep(reviewType === 'human' ? 'contact' : 'path-choice')}
+            onClick={() => {
+              // Free Canadian skips path-choice, so "Back" returns to a clean
+              // document selector (never reveals the hidden AI/Expert choice).
+              if (docType && isFreeCanadianDocument(docType)) router.push('/upload#start');
+              else setStep(reviewType === 'human' ? 'contact' : 'path-choice');
+            }}
             className="text-sm text-brand-600 hover:underline mb-4 block"
           >
             ← Back

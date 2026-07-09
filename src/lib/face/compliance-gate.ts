@@ -213,9 +213,11 @@ export function buildGateChecks(bio: BiometricData, spec: DocumentSpec, extras?:
     return finalize(checks);
   }
 
-  const report = evaluate(bio, spec, cfg);
+  // Adult eye/mouth/head compliance. `bio.gaze` (measured by the EyeGazeEstimator
+  // in the browser) is passed through so Eye Position gates on document gaze rules.
+  const report = evaluate(bio, spec, cfg, undefined, bio.gaze);
 
-  // 9 — Eye position (open + level)
+  // 9 — Eye position (open + level + gaze)
   if (push({ key: 'eyes', label: 'Eye Position', status: report.eyeAlignment.status, message: report.eyeAlignment.message })) return finalize(checks);
 
   // 10 — Mouth (strict: no visible teeth / open mouth)

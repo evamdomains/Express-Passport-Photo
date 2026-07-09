@@ -157,7 +157,9 @@ export default function CompliancePanel({ checks, generating, onResolved, onRetr
         </div>
       )}
 
-      {/* Passed: explicit "Generate" button — the customer triggers PhotoRoom. */}
+      {/* Passed: explicit "Generate" button — the customer triggers PhotoRoom.
+          When there are non-blocking warnings, also offer a light-blue
+          "Try another image" so the customer can upload a cleaner photo instead. */}
       {done && passed && !generating && (
         <div className="mt-6 max-w-sm mx-auto">
           <button
@@ -166,6 +168,14 @@ export default function CompliancePanel({ checks, generating, onResolved, onRetr
           >
             Generate Passport Photo →
           </button>
+          {warnings.length > 0 && (
+            <button
+              onClick={onRetry}
+              className="mt-3 w-full bg-sky-100 text-sky-700 border border-sky-300 py-3.5 rounded-xl font-bold text-base hover:bg-sky-200 transition-colors"
+            >
+              Try another image
+            </button>
+          )}
           <p className="text-center text-xs text-gray-400 mt-3">
             We&apos;ll remove the background and size your photo to spec.
           </p>

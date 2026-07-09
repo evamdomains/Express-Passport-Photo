@@ -24,6 +24,6 @@ export interface DocumentSpec {
   faceHeightMinMm: number | null;
   faceHeightMaxMm: number | null;
   requirements: string[];
-  /** How many photos fit on a 4×6 print: [cols, rows] */
+  /** Photos per 4×6 print sheet: [cols, rows]. Square photos → landscape 6×4; tall photos → portrait 4×6. */
   tilesOn4x6: [number, number];
 }

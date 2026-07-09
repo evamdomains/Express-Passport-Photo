@@ -3,6 +3,11 @@
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import type { BiometricData, BiometricConfig, ImageQualityMetrics } from '@/types/biometric';
 import { buildBiometrics, emptyBiometrics, INNER_MOUTH_IDX, IDX, type LM } from './landmarks';
+import { estimateEyeGaze } from './EyeGazeEstimator';
+import { evaluateEyeVisibility } from './EyeVisibilityEvaluator';
+import { buildEyeRegions } from './EyeOcclusionEvaluator';
+import { EYE_OCCLUSION_CONFIG } from './eye-occlusion-rules';
+import { evaluateEyePixelVisibility, type EyeCropMetric } from './EyePixelVisibilityEvaluator';
 import { computeFaceQualityScore } from './quality-config';
 import { EXPOSURE } from './image-quality';
 import { suppressMediapipeConsoleNoise } from './suppress-mediapipe-logs';
@@ -253,6 +258,31 @@ function detectGlassesScore(lm: LM[], bitmap: ImageBitmap): number | undefined {
   }
 }
 
+/**
+ * Pixel texture/contrast metric for one eye crop — the model-free occlusion signal.
+ * Reuses the same ROI sampling as the sharpness check. Returns undefined when the
+ * eye can't be sampled (never fabricates a failure).
+ */
+function eyeCropMetric(bitmap: ImageBitmap, box: Box | null): EyeCropMetric | undefined {
+  if (!box) return undefined;
+  const e = roiGray(bitmap, box, 96);
+  if (!e) return undefined;
+  const s = laplacianStats(e.gray, e.w, e.h);
+  return { texture: round(s.variance, 1), edgeDensity: round(s.edgeDensity, 4), contrast: round(contrastOf(e.gray), 4) };
+}
+
+/**
+ * TIGHT eye crop — just the palpebral fissure (lids + iris + sclera + corners), with
+ * minimal padding so the pixel analysis sees the EYE, not the eyebrow/forehead/cheek.
+ */
+function tightEyeBox(inn: LM, out: LM, up: LM, low: LM): Box | null {
+  if (!inn || !out || !up || !low) return null;
+  const left = Math.min(inn.x, out.x), right = Math.max(inn.x, out.x);
+  const top = Math.min(up.y, low.y), bottom = Math.max(up.y, low.y);
+  const padX = (right - left) * 0.1, padY = (bottom - top) * 0.35;
+  return { x: left - padX, y: top - padY, width: (right - left) + 2 * padX, height: (bottom - top) + 2 * padY };
+}
+
 function eyeBox(inn: LM, out: LM, up: LM, low: LM): Box | null {
   if (!inn || !out || !up || !low) return null;
   const left = Math.min(inn.x, out.x), right = Math.max(inn.x, out.x);
@@ -338,8 +368,40 @@ async function analyzeBitmap(
     cfg,
     teeth,
   );
+  // Eye-gaze MEASUREMENT (pure geometry; no PASS/FAIL). Computed here where the
+  // raw MediaPipe landmarks exist, then attached to `bio` so the compliance
+  // engine can apply document-specific gaze rules on the gate AND the server.
+  // `headPitchDeg` enables vertical perspective compensation (camera above eyes);
+  // `headYawDeg` lets the estimator lower confidence when the head is turned far
+  // off-axis (iris-based gaze degrades under strong yaw). Neither changes direction.
+  //
+  // ADULT PIPELINE ONLY: run the Eye VISIBILITY gate first. If the eyes aren't
+  // usable (one closed, iris not found, covered/occluded), we do NOT estimate gaze
+  // — the estimator early-exits to UNKNOWN. Infants keep their existing behaviour
+  // (relaxed eye rules; gaze unused), so visibility is skipped for them entirely.
+  const visibility = cfg.infant ? undefined : evaluateEyeVisibility(faces[0]);
+  const gaze = estimateEyeGaze(faces[0], {
+    headPitchDeg: bio.pitch,
+    headYawDeg: bio.yaw,
+    // Only a genuine NOT_VISIBLE blocks gaze; VISIBLE / PARTIAL / UNKNOWN all run it.
+    eyesVisible: visibility ? visibility.status !== 'NOT_VISIBLE' : true,
+  });
+  // Eye REGION boxes (from the eye landmarks) — consumed by the occlusion check once
+  // object detections are available (adult pipeline only; infants skip).
+  const eyeRegions = cfg.infant ? undefined : buildEyeRegions(faces[0], EYE_OCCLUSION_CONFIG.EYE_REGION_PADDING) ?? undefined;
+
+  // PIXEL eye-visibility (adult only): texture/contrast of each eye crop catches a
+  // covered eye that MediaPipe's estimated landmarks can't reveal (blindfold / cloth
+  // / hand). Uses the SAME eye ROIs as the sharpness check.
+  const eyePixelVisibility = cfg.infant
+    ? undefined
+    : evaluateEyePixelVisibility({
+        left: eyeCropMetric(bitmap, tightEyeBox(faces[0][IDX.lEyeIn], faces[0][IDX.lEyeOut], faces[0][IDX.lEyeUp], faces[0][IDX.lEyeLow])),
+        right: eyeCropMetric(bitmap, tightEyeBox(faces[0][IDX.rEyeIn], faces[0][IDX.rEyeOut], faces[0][IDX.rEyeUp], faces[0][IDX.rEyeLow])),
+      });
+
   const quality = computeImageQuality(faces[0], bitmap);
-  return { bio, quality };
+  return { bio: { ...bio, gaze, eyeVisibility: visibility, eyeRegions, eyePixelVisibility }, quality };
 }
 
 export async function analyzeImageFile(

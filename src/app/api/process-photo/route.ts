@@ -210,7 +210,7 @@ export async function POST(req: NextRequest) {
       crop = computeCrop(refined, spec, cfg);
       // Achieved ratio = (true crown→chin) / crop height → equals target by design.
       achievedRatio = crop.height > 0 ? refined.faceHeightNorm / crop.height : cfg.targetRatio;
-      const report = evaluate(refined, spec, cfg, achievedRatio);
+      const report = evaluate(refined, spec, cfg, achievedRatio, refined.gaze);
 
       // Clean, non-conflicting note (same crown→chin metric, upload → generated).
       // Replaces any "face appears small/large" wording so the review page shows

@@ -29,7 +29,7 @@ export const DOCUMENT_SPECS: Record<DocumentTypeId, DocumentSpec> = {
       'No hats or head coverings (unless for religious reasons)',
       'Taken within the last 6 months',
     ],
-    tilesOn4x6: [2, 3],
+    tilesOn4x6: [3, 2],
   },
 
   us_visa: {
@@ -55,7 +55,7 @@ export const DOCUMENT_SPECS: Record<DocumentTypeId, DocumentSpec> = {
       'No hats or head coverings',
       'Taken within the last 6 months',
     ],
-    tilesOn4x6: [2, 3],
+    tilesOn4x6: [3, 2],
   },
 
   baby_passport: {
@@ -82,7 +82,7 @@ export const DOCUMENT_SPECS: Record<DocumentTypeId, DocumentSpec> = {
       'No hats or head coverings (unless for religious reasons)',
       'Taken within the last 6 months',
     ],
-    tilesOn4x6: [2, 3],
+    tilesOn4x6: [3, 2],
   },
 
   canadian_passport: {

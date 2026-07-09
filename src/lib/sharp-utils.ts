@@ -81,31 +81,52 @@ export async function composePassportPhoto(
 }
 
 /**
- * Creates a tiled print-ready image on a 4×6 inch canvas (1200×1800 px at 300 DPI).
- * Returns a JPEG buffer suitable for printing at any pharmacy.
+ * Creates a tiled print-ready image on a 4×6 photo sheet at 300 DPI. Orientation
+ * follows the photo shape:
+ *   • square photos (US 2×2in)      → LANDSCAPE 6×4 (1800×1200), e.g. 3×2 = 6 photos
+ *   • tall photos   (Canadian 50×70mm) → PORTRAIT 4×6 (1200×1800), e.g. 2×2 = 4 photos
+ * The grid comes from `spec.tilesOn4x6` = [cols, rows]. Returns a JPEG buffer
+ * suitable for printing at any pharmacy.
  */
 export async function createTiledComposite(
   photoBuffer: Buffer,
   spec: DocumentSpec
 ): Promise<Buffer> {
-  const CANVAS_W = 1200; // 4 inches at 300 DPI
-  const CANVAS_H = 1800; // 6 inches at 300 DPI
+  // Tall (portrait) photos don't fit two rows on a 4-inch-tall landscape sheet,
+  // so they print on a portrait 4×6; square photos print on a landscape 6×4.
+  const isTallPhoto = spec.heightPx > spec.widthPx * 1.2;
+  const CANVAS_W = isTallPhoto ? 1200 : 1800; // 4in (portrait) vs 6in (landscape)
+  const CANVAS_H = isTallPhoto ? 1800 : 1200; // 6in (portrait) vs 4in (landscape)
   const [cols, rows] = spec.tilesOn4x6;
 
   const marginH = Math.floor((CANVAS_W - cols * spec.widthPx) / (cols + 1));
   const marginV = Math.floor((CANVAS_H - rows * spec.heightPx) / (rows + 1));
 
+  // Thin per-photo cut-guide border: ~1 px at 300 DPI (≈0.08 mm). Drawn as a single
+  // SVG overlay of 1 px black outlines — one per photo — placed exactly on each
+  // photo's edges. The photos are composited at full size FIRST, so this only adds
+  // a hairline outline; it never resizes, crops, or retouches the images. No border
+  // is drawn around the whole sheet — only around each individual photo.
+  const BORDER_PX = 1;
   const composites: sharp.OverlayOptions[] = [];
+  const outlines: string[] = [];
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      composites.push({
-        input: photoBuffer,
-        left: marginH + col * (spec.widthPx + marginH),
-        top: marginV + row * (spec.heightPx + marginV),
-      });
+      const left = marginH + col * (spec.widthPx + marginH);
+      const top = marginV + row * (spec.heightPx + marginV);
+      composites.push({ input: photoBuffer, left, top });
+      // +0.5 / −1 keeps the 1 px stroke crisp (on pixel centres) and inside the tile.
+      outlines.push(
+        `<rect x="${left + 0.5}" y="${top + 0.5}" width="${spec.widthPx - 1}" height="${spec.heightPx - 1}" ` +
+          `fill="none" stroke="#000000" stroke-width="${BORDER_PX}" shape-rendering="crispEdges"/>`,
+      );
     }
   }
+
+  // Border overlay drawn LAST so the outlines sit on top of the photo edges.
+  const borderSvg = `<svg width="${CANVAS_W}" height="${CANVAS_H}" xmlns="http://www.w3.org/2000/svg">${outlines.join('')}</svg>`;
+  composites.push({ input: Buffer.from(borderSvg), top: 0, left: 0 });
 
   return sharp({
     create: {
@@ -121,15 +142,18 @@ export async function createTiledComposite(
 }
 
 /**
- * Wraps the tiled JPEG inside a single-page PDF sized to 4×6 inches.
- * Uses pdf-lib so no native dependencies are added beyond sharp.
+ * Wraps the tiled JPEG inside a single-page PDF sized to match the composite —
+ * LANDSCAPE 6×4 for square-photo sheets, PORTRAIT 4×6 for tall-photo (Canadian)
+ * sheets. Uses pdf-lib so no native dependencies are added beyond sharp.
  */
 export async function createPrintPdf(tiledJpeg: Buffer): Promise<Buffer> {
   const pdf = await PDFDocument.create();
   const POINTS_PER_INCH = 72;
-  const page = pdf.addPage([4 * POINTS_PER_INCH, 6 * POINTS_PER_INCH]);
-
   const img = await pdf.embedJpg(tiledJpeg);
+  const landscape = img.width >= img.height;
+  const page = pdf.addPage(
+    landscape ? [6 * POINTS_PER_INCH, 4 * POINTS_PER_INCH] : [4 * POINTS_PER_INCH, 6 * POINTS_PER_INCH],
+  );
   page.drawImage(img, {
     x: 0,
     y: 0,

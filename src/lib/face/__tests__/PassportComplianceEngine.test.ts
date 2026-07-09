@@ -204,8 +204,15 @@ describe('8. Head pose validation', () => {
     expect(turned.headPosition.message).toMatch(/head/i);
     expect(turned.overall).toBe('NON_COMPLIANT');
 
+    // +pitch = head DOWN → guidance must tell the user to RAISE (not lower).
     const tilted = evaluate(makeBio({ pitch: 20 }), US, usCfg); // pitchTol 15
     expect(tilted.headPosition.status).toBe('FAIL');
-    expect(tilted.headPosition.message).toMatch(/chin/i);
+    expect(tilted.headPosition.message).toMatch(/raise your head/i);
+    expect(tilted.headPosition.message).not.toMatch(/lower your chin/i);
+
+    // −pitch = head UP → guidance must tell the user to LOWER their chin.
+    const up = evaluate(makeBio({ pitch: -20 }), US, usCfg);
+    expect(up.headPosition.status).toBe('FAIL');
+    expect(up.headPosition.message).toMatch(/lower your chin/i);
   });
 });

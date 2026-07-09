@@ -84,12 +84,12 @@ export default function OrderConfirmation() {
             <>
               {/* Secure app routes — mint fresh signed URLs on click (storage is private). */}
               <a
-                href={`/download/pdf/${order.id}`}
+                href={`/download/composite/${order.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full bg-brand-600 text-white py-4 rounded-xl font-bold text-base hover:bg-brand-700 transition-colors"
               >
-                ↓ Download Print-Ready PDF (4×6)
+                ↓ Download Print-Ready JPEG (4×6 print)
               </a>
               {order.photo_processed_url && (
                 <a

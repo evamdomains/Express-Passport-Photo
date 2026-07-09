@@ -59,6 +59,35 @@ describe('baby eyes', () => {
   it('fully closed → FAIL', () => expect(evaluateBabyEyes(makeBabyBio({ eyeOpenness: 0.03 })).status).toBe('FAIL'));
 });
 
+describe('baby engine is INDEPENDENT of the adult eye-gaze estimator', () => {
+  // Attach an adult-failing gaze (looking down + off-axis + LOW confidence + closed-
+  // symmetry-style metrics) to a baby bio. The baby evaluators must ignore ALL of it
+  // and decide purely on infant eye-openness — proving EAR / iris visibility / eyelid
+  // symmetry / gaze direction / confidence are NOT enforced for babies.
+  const hostileGaze = {
+    direction: 'LOOKING_DOWN' as const,
+    confidence: 0.05,
+    leftEyeHorizontal: -0.3, rightEyeHorizontal: 0.3,
+    leftEyeVertical: 0.4, rightEyeVertical: 0.4,
+    averageHorizontal: 0.4, averageVertical: 0.4, calibratedVertical: 0.45,
+    leftEAR: 0.02, rightEAR: 0.3, averageEAR: 0.16,
+    eyelidSymmetry: 0.06, leftIrisVisibility: 0.1, rightIrisVisibility: 0.2,
+  };
+
+  it('open-eyed baby PASSES eyes regardless of a hostile attached gaze', () => {
+    const bio = makeBabyBio({ eyeOpenness: 0.22, gaze: hostileGaze });
+    expect(evaluateBabyEyes(bio).status).toBe('PASS');
+  });
+
+  it('baby verdicts are byte-identical with and without the attached gaze', () => {
+    const withGaze = makeBabyBio({ eyeOpenness: 0.12, gaze: hostileGaze });
+    const without = makeBabyBio({ eyeOpenness: 0.12 });
+    expect(evaluateBabyEyes(withGaze)).toEqual(evaluateBabyEyes(without));
+    expect(evaluateBabyHeadTilt(withGaze)).toEqual(evaluateBabyHeadTilt(without));
+    expect(evaluateBabyExpression(withGaze)).toEqual(evaluateBabyExpression(without));
+  });
+});
+
 describe('baby mouth', () => {
   it('closed → PASS', () => expect(evaluateBabyMouth(makeBabyBio({ mouthGap: 0.02 })).status).toBe('PASS'));
   it('slightly open / small O → PASS', () => expect(evaluateBabyMouth(makeBabyBio({ mouthGap: 0.2 })).status).toBe('PASS'));
