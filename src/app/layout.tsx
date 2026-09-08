@@ -24,8 +24,14 @@ export const metadata: Metadata = {
     template: '%s | Express Passport Photo',
   },
   description:
-    'ICAO-compliant passport photos in 60 seconds. AI removes background, checks compliance. Digital download $0.99. CVS/Walgreens pickup $0.99. Money-back guarantee.',
+    'ICAO-compliant passport photos in 30 seconds. AI removes background, checks compliance. Digital download $0.99. CVS/Walgreens pickup $0.99. Money-back guarantee.',
   metadataBase: new URL('https://expresspassportphoto.com'),
+  alternates: {
+    canonical: 'https://expresspassportphoto.com',
+  },
+  verification: {
+    google: 'c86bd4953ed9b7ea',
+  },
   icons: {
     icon: '/images/backgrounds/favicon.png',
     shortcut: '/images/backgrounds/favicon.png',
@@ -81,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   />
                 </a>
                 <p className="text-sm text-gray-500 mt-4 leading-relaxed max-w-xs">
-                  Professional, government-compliant passport &amp; ID photos in 60 seconds — AI background removal and
+                  Professional, government-compliant passport &amp; ID photos in 30 seconds — AI background removal and
                   automatic compliance checking, from any selfie.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
@@ -186,6 +192,37 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </footer>
 
         <StickyMobileCTA />
+
+        <Script
+          id="local-business-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'LocalBusiness',
+              name: 'Express Passport Photo',
+              image: 'https://expresspassportphoto.com/og-image.png',
+              url: 'https://expresspassportphoto.com',
+              telephone: '',
+              email: 'info@expresspassportphoto.com',
+              address: {
+                '@type': 'PostalAddress',
+                streetAddress: '11175 Cicero Drive, Suite 100',
+                addressLocality: 'Alpharetta',
+                addressRegion: 'GA',
+                postalCode: '30022',
+                addressCountry: 'US',
+              },
+              priceRange: '$',
+              description:
+                'AI-powered passport photo service. Get a government-compliant passport photo in 30 seconds. Digital download or CVS/Walgreens pickup. Money-back guarantee.',
+              sameAs: [
+                'https://www.instagram.com/expresspassportphoto/',
+                'https://www.facebook.com/profile.php?id=61590395594175',
+              ],
+            }),
+          }}
+        />
 
         {/* HubSpot live chat — loads only when the portal ID is configured, so it
             stays inert until you set NEXT_PUBLIC_HUBSPOT_PORTAL_ID. The widget
