@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     canonical: 'https://expresspassportphoto.com',
   },
   verification: {
-    google: 'c86bd4953ed9b7ea',
+    google: 'jEtgw3CtKWI9Uvk5XWVr5JZ4WE-abIX7PHq34g3T8Kw',
   },
   icons: {
     icon: '/images/backgrounds/favicon.png',
