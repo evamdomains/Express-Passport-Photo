@@ -44,14 +44,14 @@ export default function BlogPage() {
         </div>
       </section>
 
-      {/* Posts */}
+      {/* Posts — 2-column grid on md+, stacked on mobile */}
       <section className="px-4 pb-20">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
           {POSTS.map((post) => (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="group block rounded-2xl border border-gray-100 bg-white p-6 shadow-sm ring-1 ring-gray-100 transition-shadow hover:shadow-md"
+              className="group flex flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm ring-1 ring-gray-100 transition-shadow hover:shadow-md"
             >
               <div className="flex items-center gap-3 mb-3">
                 <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
@@ -64,7 +64,7 @@ export default function BlogPage() {
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors leading-snug">
                 {post.title}
               </h2>
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed">{post.excerpt}</p>
+              <p className="mt-2 text-sm text-gray-600 leading-relaxed flex-1">{post.excerpt}</p>
               <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600">
                 Read article
                 <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,7 +78,7 @@ export default function BlogPage() {
 
       {/* CTA */}
       <section className="px-4 pb-20">
-        <div className="max-w-3xl mx-auto rounded-3xl bg-brand-600 px-6 py-10 sm:px-12 sm:py-12 text-center text-white shadow-lg">
+        <div className="max-w-5xl mx-auto rounded-3xl bg-brand-600 px-6 py-10 sm:px-12 sm:py-12 text-center text-white shadow-lg">
           <h2 className="text-2xl sm:text-3xl font-bold">Ready to get your passport photo?</h2>
           <p className="mt-3 text-brand-50 leading-relaxed max-w-xl mx-auto">
             Skip the store. Get a government-compliant photo in 30 seconds for just $0.99.
