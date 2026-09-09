@@ -44,7 +44,7 @@ export default function PassportPhotoAtHomePage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-        .blog-page { font-family: 'Inter', system-ui, sans-serif; background: #F8F9FB; min-height: 100vh; }
+        .blog-page { font-family: 'Inter', system-ui, sans-serif; background: #fff; min-height: 100vh; color: #374151; }
 
         .blog-hero { background: linear-gradient(135deg, #1B3A6B 0%, #1e4d9b 100%); padding: 56px 24px 64px; color: #fff; }
         .blog-hero-inner { max-width: 760px; margin: 0 auto; }
@@ -151,31 +151,6 @@ export default function PassportPhotoAtHomePage() {
 
         .blog-divider { border: none; border-top: 1px solid #E2E8F0; margin: 48px 0 0; }
 
-        @media (prefers-color-scheme: dark) {
-          :root:not([data-theme="light"]) .blog-page { background: #0F172A; }
-          :root:not([data-theme="light"]) .blog-toc,
-          :root:not([data-theme="light"]) .req-item,
-          :root:not([data-theme="light"]) .step-item,
-          :root:not([data-theme="light"]) details.faq-item,
-          :root:not([data-theme="light"]) .compare-card,
-          :root:not([data-theme="light"]) .lighting-diagram,
-          :root:not([data-theme="light"]) .blog-author { background: #1E293B; border-color: #334155; }
-          :root:not([data-theme="light"]) .blog-h2 { color: #E2E8F0; }
-          :root:not([data-theme="light"]) .blog-p { color: #CBD5E1; }
-          :root:not([data-theme="light"]) .req-value { color: #E2E8F0; }
-          :root:not([data-theme="light"]) .step-title { color: #E2E8F0; }
-          :root:not([data-theme="light"]) .step-body { color: #94A3B8; }
-          :root:not([data-theme="light"]) details.faq-item summary { color: #E2E8F0; }
-          :root:not([data-theme="light"]) .faq-answer { color: #94A3B8; }
-          :root:not([data-theme="light"]) .blog-author-name { color: #E2E8F0; }
-          :root:not([data-theme="light"]) .blog-author-bio { color: #94A3B8; }
-          :root:not([data-theme="light"]) .compare-card-head { background: #0F172A !important; }
-          :root:not([data-theme="light"]) .compare-row { color: #CBD5E1; }
-          :root:not([data-theme="light"]) .callout.tip { background: #172554; }
-          :root:not([data-theme="light"]) .callout.tip p { color: #BFDBFE; }
-          :root:not([data-theme="light"]) .blog-divider { border-color: #334155; }
-        }
-        :root[data-theme="dark"] .blog-page { background: #0F172A; }
       `}</style>
 
       <div className="blog-page">

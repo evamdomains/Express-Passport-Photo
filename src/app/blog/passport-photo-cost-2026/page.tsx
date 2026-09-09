@@ -31,7 +31,7 @@ export default function PassportPhotoCostPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-        .blog-page { font-family: 'Inter', system-ui, sans-serif; background: #F8F9FB; min-height: 100vh; }
+        .blog-page { font-family: 'Inter', system-ui, sans-serif; background: #fff; min-height: 100vh; color: #374151; }
 
         /* Hero */
         .blog-hero { background: linear-gradient(135deg, #1B3A6B 0%, #1e4d9b 100%); padding: 56px 24px 64px; color: #fff; }
@@ -134,37 +134,6 @@ export default function PassportPhotoCostPage() {
         /* Divider */
         .blog-divider { border: none; border-top: 1px solid #E2E8F0; margin: 48px 0 0; }
 
-        @media (prefers-color-scheme: dark) {
-          :root:not([data-theme="light"]) .blog-page { background: #0F172A; }
-          :root:not([data-theme="light"]) .blog-toc,
-          :root:not([data-theme="light"]) .step-item,
-          :root:not([data-theme="light"]) details.faq-item,
-          :root:not([data-theme="light"]) .blog-author { background: #1E293B; border-color: #334155; }
-          :root:not([data-theme="light"]) .blog-h2 { color: #E2E8F0; }
-          :root:not([data-theme="light"]) .blog-p { color: #CBD5E1; }
-          :root:not([data-theme="light"]) .blog-table-wrap { border-color: #334155; }
-          :root:not([data-theme="light"]) .blog-table td { color: #CBD5E1; border-color: #1E293B; }
-          :root:not([data-theme="light"]) .blog-table thead tr { background: #1E293B; }
-          :root:not([data-theme="light"]) .blog-table tr.best { background: #172554; }
-          :root:not([data-theme="light"]) .blog-table td.price { color: #E2E8F0; }
-          :root:not([data-theme="light"]) details.faq-item summary { color: #E2E8F0; }
-          :root:not([data-theme="light"]) .faq-answer { color: #94A3B8; }
-          :root:not([data-theme="light"]) .risk-item { background: #1E293B; border-color: #7F1D1D; }
-          :root:not([data-theme="light"]) .risk-item span { color: #CBD5E1; }
-          :root:not([data-theme="light"]) .step-body { color: #CBD5E1; }
-          :root:not([data-theme="light"]) .callout.tip { background: #172554; }
-          :root:not([data-theme="light"]) .callout.tip p { color: #BFDBFE; }
-          :root:not([data-theme="light"]) .blog-author-name { color: #E2E8F0; }
-          :root:not([data-theme="light"]) .blog-author-bio { color: #94A3B8; }
-          :root:not([data-theme="light"]) .blog-divider { border-color: #334155; }
-        }
-        :root[data-theme="dark"] .blog-page { background: #0F172A; }
-        :root[data-theme="dark"] .blog-toc,
-        :root[data-theme="dark"] .step-item,
-        :root[data-theme="dark"] details.faq-item,
-        :root[data-theme="dark"] .blog-author { background: #1E293B; border-color: #334155; }
-        :root[data-theme="dark"] .blog-h2 { color: #E2E8F0; }
-        :root[data-theme="dark"] .blog-p { color: #CBD5E1; }
       `}</style>
 
       <div className="blog-page">
