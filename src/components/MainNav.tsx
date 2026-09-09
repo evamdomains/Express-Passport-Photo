@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 const LINKS = [
+  { href: '/blog', label: 'Blog', visibility: 'hidden sm:block' },
   { href: '/store-locator', label: 'Find a Store', visibility: 'hidden lg:block' },
   { href: '/reviews', label: 'Reviews', visibility: 'hidden sm:block' },
 ];
