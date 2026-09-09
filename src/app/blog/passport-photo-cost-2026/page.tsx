@@ -1,10 +1,25 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+const CANONICAL = 'https://expresspassportphoto.com/blog/passport-photo-cost-2026';
+
 export const metadata: Metadata = {
   title: 'How Much Does a Passport Photo Cost in 2026? Honest Price Guide',
   description: 'Passport photo prices in 2026 range from $0.99 to $19.99. Compare CVS, Walgreens, UPS Store and AI services. Find the cheapest option that\'s still government-compliant.',
-  alternates: { canonical: 'https://expresspassportphoto.com/blog/passport-photo-cost-2026' },
+  alternates: { canonical: CANONICAL },
+  openGraph: {
+    title: 'How Much Does a Passport Photo Cost in 2026?',
+    description: 'CVS charges $14.99. Walgreens $16.99. UPS $19.99. AI costs $0.99. Full price breakdown — and which option is actually worth it.',
+    url: CANONICAL,
+    siteName: 'Express Passport Photo',
+    type: 'article',
+    publishedTime: '2026-09-08',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'How Much Does a Passport Photo Cost in 2026?',
+    description: 'CVS charges $14.99. Walgreens $16.99. AI costs $0.99. Full honest comparison.',
+  },
 };
 
 const PROVIDERS = [
@@ -24,6 +39,38 @@ const FAQ = [
   { q: 'Can I take my own passport photo at home?', a: 'Yes. US government rules allow self-taken passport photos. The photo must meet strict requirements: white background, correct head size, neutral expression, eyes open, no glasses. An AI service handles all of these automatically.' },
   { q: 'Does a passport photo need to be professionally taken?', a: 'No. The US government does not require photos to be taken by a professional. You can take a selfie and use an AI tool to make it compliant. The photo just needs to meet technical specifications.' },
 ];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Article',
+      headline: 'How Much Does a Passport Photo Cost in 2026? Honest Price Guide',
+      description: 'Passport photo prices in 2026 range from $0.99 to $19.99. Compare CVS, Walgreens, UPS Store and AI services.',
+      datePublished: '2026-09-08',
+      dateModified: '2026-09-08',
+      author: { '@type': 'Organization', name: 'Express Passport Photo', url: 'https://expresspassportphoto.com' },
+      publisher: { '@type': 'Organization', name: 'Express Passport Photo', url: 'https://expresspassportphoto.com' },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': CANONICAL },
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: FAQ.map(({ q, a }) => ({
+        '@type': 'Question',
+        name: q,
+        acceptedAnswer: { '@type': 'Answer', text: a },
+      })),
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://expresspassportphoto.com' },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://expresspassportphoto.com/blog' },
+        { '@type': 'ListItem', position: 3, name: 'Passport Photo Cost 2026', item: CANONICAL },
+      ],
+    },
+  ],
+};
 
 export default function PassportPhotoCostPage() {
   return (
@@ -134,10 +181,21 @@ export default function PassportPhotoCostPage() {
 
       `}</style>
 
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
       <div className="blog-page">
         {/* Hero */}
         <div className="blog-hero">
           <div className="blog-hero-inner">
+            <nav aria-label="Breadcrumb" style={{marginBottom: 20}}>
+              <ol style={{display:'flex', gap:6, fontSize:13, color:'rgba(255,255,255,0.55)', listStyle:'none', padding:0, margin:0, flexWrap:'wrap'}}>
+                <li><Link href="/" style={{color:'rgba(255,255,255,0.55)', textDecoration:'none'}}>Home</Link></li>
+                <li style={{opacity:0.4}}>›</li>
+                <li><Link href="/blog" style={{color:'rgba(255,255,255,0.55)', textDecoration:'none'}}>Blog</Link></li>
+                <li style={{opacity:0.4}}>›</li>
+                <li style={{color:'rgba(255,255,255,0.8)', fontWeight:500}}>Passport Photo Cost 2026</li>
+              </ol>
+            </nav>
             <Link href="/blog" className="blog-back">
               <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
               All guides
@@ -322,6 +380,25 @@ export default function PassportPhotoCostPage() {
                   <div className="faq-answer">{item.a}</div>
                 </details>
               ))}
+            </div>
+          </div>
+
+          {/* Internal links */}
+          <div style={{background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:14, padding:'20px 24px', marginTop:40}}>
+            <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'#94A3B8', marginBottom:12}}>Related guides</div>
+            <div style={{display:'flex', flexDirection:'column', gap:8}}>
+              <Link href="/blog/how-to-take-passport-photo-at-home" style={{display:'flex', alignItems:'center', gap:8, fontSize:14, fontWeight:600, color:'#2563EB', textDecoration:'none'}}>
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                How to Take a Passport Photo at Home (Step-by-Step Guide)
+              </Link>
+              <Link href="/us-passport-photo" style={{display:'flex', alignItems:'center', gap:8, fontSize:14, fontWeight:600, color:'#2563EB', textDecoration:'none'}}>
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                US Passport Photo Requirements
+              </Link>
+              <Link href="/photo-requirements" style={{display:'flex', alignItems:'center', gap:8, fontSize:14, fontWeight:600, color:'#2563EB', textDecoration:'none'}}>
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                What Makes a Passport Photo Get Rejected?
+              </Link>
             </div>
           </div>
 

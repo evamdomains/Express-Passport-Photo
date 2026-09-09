@@ -1,10 +1,25 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+const CANONICAL = 'https://expresspassportphoto.com/blog/how-to-take-passport-photo-at-home';
+
 export const metadata: Metadata = {
   title: 'How to Take a Passport Photo at Home (Step-by-Step)',
   description: 'Take a government-compliant passport photo at home using your phone. Follow these exact steps for background, lighting, framing, and pass the State Department\'s requirements on the first try.',
-  alternates: { canonical: 'https://expresspassportphoto.com/blog/how-to-take-passport-photo-at-home' },
+  alternates: { canonical: CANONICAL },
+  openGraph: {
+    title: 'How to Take a Passport Photo at Home (Step-by-Step Guide)',
+    description: 'You don\'t need a studio. With a plain wall, decent light, and your phone you can get a government-compliant photo in minutes.',
+    url: CANONICAL,
+    siteName: 'Express Passport Photo',
+    type: 'article',
+    publishedTime: '2026-09-08',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'How to Take a Passport Photo at Home',
+    description: 'Step-by-step guide: background, lighting, camera position, compliance check. No studio needed.',
+  },
 };
 
 const REQUIREMENTS = [
@@ -37,6 +52,38 @@ const FAQ = [
   { q: 'What should I wear for a passport photo?', a: 'Wear everyday clothing. Uniforms are not permitted. Do not wear anything white that blends into the white background. Avoid hats and head coverings unless worn daily for religious reasons.' },
   { q: 'How do I know if my photo meets US passport requirements?', a: 'You can use an AI passport photo service that automatically checks compliance. Express Passport Photo checks head size, positioning, background, lighting, and eye openness before you download.' },
 ];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Article',
+      headline: 'How to Take a Passport Photo at Home (Step-by-Step Guide)',
+      description: 'Take a government-compliant passport photo at home using your phone.',
+      datePublished: '2026-09-08',
+      dateModified: '2026-09-08',
+      author: { '@type': 'Organization', name: 'Express Passport Photo', url: 'https://expresspassportphoto.com' },
+      publisher: { '@type': 'Organization', name: 'Express Passport Photo', url: 'https://expresspassportphoto.com' },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': CANONICAL },
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: FAQ.map(({ q, a }) => ({
+        '@type': 'Question',
+        name: q,
+        acceptedAnswer: { '@type': 'Answer', text: a },
+      })),
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://expresspassportphoto.com' },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://expresspassportphoto.com/blog' },
+        { '@type': 'ListItem', position: 3, name: 'How to Take a Passport Photo at Home', item: CANONICAL },
+      ],
+    },
+  ],
+};
 
 export default function PassportPhotoAtHomePage() {
   return (
@@ -151,9 +198,20 @@ export default function PassportPhotoAtHomePage() {
 
       `}</style>
 
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
       <div className="blog-page">
         <div className="blog-hero">
           <div className="blog-hero-inner">
+            <nav aria-label="Breadcrumb" style={{marginBottom: 20}}>
+              <ol style={{display:'flex', gap:6, fontSize:13, color:'rgba(255,255,255,0.55)', listStyle:'none', padding:0, margin:0, flexWrap:'wrap'}}>
+                <li><Link href="/" style={{color:'rgba(255,255,255,0.55)', textDecoration:'none'}}>Home</Link></li>
+                <li style={{opacity:0.4}}>›</li>
+                <li><Link href="/blog" style={{color:'rgba(255,255,255,0.55)', textDecoration:'none'}}>Blog</Link></li>
+                <li style={{opacity:0.4}}>›</li>
+                <li style={{color:'rgba(255,255,255,0.8)', fontWeight:500}}>How to Take a Passport Photo at Home</li>
+              </ol>
+            </nav>
             <Link href="/blog" className="blog-back">
               <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
               All guides
@@ -416,6 +474,25 @@ export default function PassportPhotoAtHomePage() {
                   <div className="faq-answer">{item.a}</div>
                 </details>
               ))}
+            </div>
+          </div>
+
+          {/* Internal links */}
+          <div style={{background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:14, padding:'20px 24px', marginTop:40}}>
+            <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'#94A3B8', marginBottom:12}}>Related guides</div>
+            <div style={{display:'flex', flexDirection:'column', gap:8}}>
+              <Link href="/blog/passport-photo-cost-2026" style={{display:'flex', alignItems:'center', gap:8, fontSize:14, fontWeight:600, color:'#2563EB', textDecoration:'none'}}>
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                How Much Does a Passport Photo Cost in 2026?
+              </Link>
+              <Link href="/us-passport-photo" style={{display:'flex', alignItems:'center', gap:8, fontSize:14, fontWeight:600, color:'#2563EB', textDecoration:'none'}}>
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                US Passport Photo Requirements
+              </Link>
+              <Link href="/upload" style={{display:'flex', alignItems:'center', gap:8, fontSize:14, fontWeight:600, color:'#2563EB', textDecoration:'none'}}>
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                Get your AI passport photo — $0.99
+              </Link>
             </div>
           </div>
 
