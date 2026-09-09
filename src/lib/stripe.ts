@@ -1,8 +1,13 @@
 import Stripe from 'stripe';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-  typescript: true,
+let _stripe: Stripe | null = null;
+export function getStripe(): Stripe {
+  if (!_stripe) _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-02-24.acacia', typescript: true });
+  return _stripe;
+}
+// Alias for callers that destructure stripe.webhooks etc. — lazy on first property access.
+export const stripe: Stripe = new Proxy({} as Stripe, {
+  get(_t, prop) { return getStripe()[prop as keyof Stripe]; },
 });
 
 export async function createCheckoutSession({
@@ -21,7 +26,7 @@ export async function createCheckoutSession({
   successUrl: string;
   cancelUrl: string;
 }) {
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
     // Price is defined inline from our own product config (no pre-created

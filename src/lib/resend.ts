@@ -1,7 +1,11 @@
 import { Resend } from 'resend';
 import { createReviewToken } from './review-token';
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY!);
+  return _resend;
+}
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'noreply@expresspassportphoto.com';
 
 /**
@@ -35,7 +39,7 @@ export async function sendDigitalDownloadEmail({
     );
   }
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: 'Your passport photos are ready — Express Passport Photo',
@@ -93,7 +97,7 @@ export async function sendOrderConfirmationEmail({
   storeAddress: string;
   storeMapsUrl: string;
 }) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: 'Order confirmed — Express Passport Photo',
@@ -139,7 +143,7 @@ export async function sendPickupReadyEmail({
   storeMapsUrl: string;
   pickupTime: string;
 }) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: 'Your passport photos are ready for pickup!',
@@ -211,7 +215,7 @@ export async function sendAdminNewOrderEmail({
       ? `PDF generation failed — <a href="${photoCompositeUrl}" style="color:#2563eb">download the 4×6 JPEG composite instead</a>.`
       : 'Photo composite not yet available — check the admin dashboard.';
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: adminEmail,
     subject: `New order to upload — ${storeName}`,
@@ -262,7 +266,7 @@ export async function sendEmailFailureAdminAlert({
   error: string;
 }) {
   const adminEmail = process.env.ADMIN_EMAIL ?? 'dhanush@sharma-foundation.org';
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: adminEmail,
     subject: 'Delivery Email Failed',
@@ -318,7 +322,7 @@ export async function sendContactEmail({
     throw new Error('Contact destination is not configured');
   }
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: expertEmail,
     replyTo: email,
@@ -395,7 +399,7 @@ export async function sendReviewRequestEmail({
   const rejectUrl = `${appUrl}/review/confirm?action=reject&token=${createReviewToken(orderId, 'reject')}`;
   const reuploadAcceptUrl = `${appUrl}/review/confirm?action=reupload-accept&token=${createReviewToken(orderId, 'reupload-accept')}`;
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to: reviewEmail,
     subject: `Photo to review — ${documentTypeName} — Order ${orderId}`,
@@ -496,7 +500,7 @@ export async function sendReviewSubmittedEmail({
   documentTypeName: string;
 }) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: 'Your photo is being reviewed — Express Passport Photo',
