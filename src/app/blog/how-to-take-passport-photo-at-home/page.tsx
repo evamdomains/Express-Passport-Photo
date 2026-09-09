@@ -42,9 +42,7 @@ export default function PassportPhotoAtHomePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
-
-        .blog-page { font-family: 'Inter', system-ui, sans-serif; background: #fff; min-height: 100vh; color: #374151; }
+        .blog-page { font-family: var(--font-inter), system-ui, sans-serif; background: #fff; min-height: 100vh; color: #374151; }
 
         .blog-hero { background: linear-gradient(135deg, #1B3A6B 0%, #1e4d9b 100%); padding: 56px 24px 64px; color: #fff; }
         .blog-hero-inner { max-width: 760px; margin: 0 auto; }
@@ -53,7 +51,7 @@ export default function PassportPhotoAtHomePage() {
         .blog-eyebrow { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
         .blog-tag { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; }
         .blog-meta { color: rgba(255,255,255,0.55); font-size: 13px; }
-        .blog-h1 { font-family: 'Playfair Display', Georgia, serif; font-size: clamp(28px, 5vw, 42px); font-weight: 800; line-height: 1.2; color: #fff; margin: 0 0 18px; text-wrap: balance; }
+        .blog-h1 { font-family: var(--font-inter), system-ui, sans-serif;font-size: clamp(28px, 5vw, 42px); font-weight: 800; line-height: 1.2; color: #fff; margin: 0 0 18px; text-wrap: balance; }
         .blog-lead { font-size: 17px; line-height: 1.7; color: rgba(255,255,255,0.8); margin: 0; max-width: 600px; }
 
         .blog-prereqs { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 32px; }
@@ -71,7 +69,7 @@ export default function PassportPhotoAtHomePage() {
         .blog-section { margin-top: 52px; }
         .blog-section-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
         .blog-section-num { flex-shrink: 0; width: 32px; height: 32px; background: #EFF6FF; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #2563EB; margin-top: 4px; }
-        .blog-h2 { font-family: 'Playfair Display', Georgia, serif; font-size: clamp(20px, 3.5vw, 26px); font-weight: 700; color: #1B3A6B; line-height: 1.3; margin: 0; text-wrap: balance; }
+        .blog-h2 { font-family: var(--font-inter), system-ui, sans-serif;font-size: clamp(20px, 3.5vw, 26px); font-weight: 700; color: #1B3A6B; line-height: 1.3; margin: 0; text-wrap: balance; }
         .blog-p { font-size: 16px; line-height: 1.75; color: #374151; margin: 0 0 16px; }
         .blog-p:last-child { margin-bottom: 0; }
 
@@ -144,7 +142,7 @@ export default function PassportPhotoAtHomePage() {
         .blog-author-bio { font-size: 14px; color: #6B7280; line-height: 1.65; }
 
         .blog-cta { background: linear-gradient(135deg, #1B3A6B 0%, #1e4d9b 100%); border-radius: 20px; padding: 44px 36px; text-align: center; margin-top: 48px; }
-        .blog-cta h2 { font-family: 'Playfair Display', Georgia, serif; font-size: clamp(22px, 4vw, 30px); font-weight: 800; color: #fff; margin: 0 0 12px; }
+        .blog-cta h2 { font-family: var(--font-inter), system-ui, sans-serif;font-size: clamp(22px, 4vw, 30px); font-weight: 800; color: #fff; margin: 0 0 12px; }
         .blog-cta p { font-size: 16px; color: rgba(255,255,255,0.75); margin: 0 0 28px; }
         .blog-cta-btn { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #1B3A6B; font-size: 15px; font-weight: 700; padding: 14px 28px; border-radius: 12px; text-decoration: none; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
         .blog-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
