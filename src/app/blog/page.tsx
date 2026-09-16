@@ -24,6 +24,22 @@ const POSTS = [
     readTime: '7 min read',
     category: 'How-To Guide',
   },
+  {
+    slug: 'how-to-renew-us-passport-2026',
+    title: 'How to Renew a US Passport in 2026: Complete Step-by-Step Guide',
+    excerpt: 'Renewing a US passport in 2026 takes 6–8 weeks standard or 2–3 weeks expedited. Here\'s exactly what documents you need, current fees, and how to mail your application.',
+    date: 'September 16, 2026',
+    readTime: '8 min read',
+    category: 'How-To Guide',
+  },
+  {
+    slug: 'passport-photo-rejected',
+    title: 'What Happens If Your Passport Photo Gets Rejected? (And How to Fix It Fast)',
+    excerpt: 'A photo rejection after mailing adds 2–4 weeks to your application. Here are the 10 most common rejection reasons and exactly how to fix each one.',
+    date: 'September 16, 2026',
+    readTime: '6 min read',
+    category: 'Troubleshooting',
+  },
 ];
 
 export default function BlogPage() {
