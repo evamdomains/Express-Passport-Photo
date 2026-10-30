@@ -40,6 +40,14 @@ const POSTS = [
     readTime: '6 min read',
     category: 'Troubleshooting',
   },
+  {
+    slug: 'baby-passport-photo',
+    title: 'Baby Passport Photo Requirements 2026: How to Get One That Passes (Every Time)',
+    excerpt: 'Babies need passports too — and the government holds their photos to the exact same standards as adults. Here is the laying-down method that works for newborns, and how to avoid the 6 most common rejection reasons.',
+    date: 'October 30, 2026',
+    readTime: '7 min read',
+    category: 'Family Travel',
+  },
 ];
 
 export default function BlogPage() {
