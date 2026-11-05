@@ -48,6 +48,14 @@ const POSTS = [
     readTime: '7 min read',
     category: 'Family Travel',
   },
+  {
+    slug: 'emergency-passport-24-hours',
+    title: 'How to Get an Emergency Passport in 24 Hours (2026 Guide)',
+    excerpt: 'Emergency passport appointments are available — but only if you qualify and know exactly how to book one. Here is the step-by-step process, documents you must bring, and how to get a compliant photo the same morning.',
+    date: 'November 6, 2026',
+    readTime: '8 min read',
+    category: 'Urgent Travel',
+  },
 ];
 
 export default function BlogPage() {
